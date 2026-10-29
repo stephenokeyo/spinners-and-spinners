@@ -1,6 +1,6 @@
 databases:
   - name: spinners-db
-    plan: basic-256mb
+    plan: free
     databaseName: spinners
     user: spinners
 
@@ -8,7 +8,7 @@ services:
   - type: web
     name: spinners-app
     runtime: node
-    plan: starter
+    plan: free
     buildCommand: npm install --include=dev && npm run build
     startCommand: node server/index.js
     healthCheckPath: /api/bootstrap
