@@ -8,6 +8,7 @@ export const LoginModal: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [setupCode, setSetupCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -23,10 +24,11 @@ export const LoginModal: React.FC = () => {
     e.preventDefault();
     setBusy(true);
     setError(null);
-    const result = hasAdmin ? await login(email, password) : await setupAdmin(name, email, password);
+    const result = hasAdmin ? await login(email, password) :     await setupAdmin(name, email, password, setupCode);
     setBusy(false);
     if (result.success) {
       setPassword('');
+          setSetupCode('');
     } else {
       setError(result.error || 'Something went wrong.');
     }
@@ -62,6 +64,15 @@ export const LoginModal: React.FC = () => {
               No admin exists yet. Create the global admin account — it can then add partners and give them logins.
             </p>
             <input required value={name} onChange={e => setName(e.target.value)} placeholder="Your name" className={inputCls} />
+            <input
+              required
+              type="password"
+              autoComplete="off"
+              value={setupCode}
+              onChange={e => setSetupCode(e.target.value)}
+              placeholder="Setup code (from your server settings)"
+              className={inputCls}
+            />
           </>
         )}
 

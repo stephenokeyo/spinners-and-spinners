@@ -49,14 +49,45 @@ const publicUser = u => ({
   title: u.title
 });
 
+const WINDOW_MS = 15 * 60 * 1000;
+const QUARANTINE_MS = 24 * 60 * 60 * 1000;
 const attempts = new Map();
-const rateLimited = key => {
+const quarantined = new Map(); // ip -> release time
+const recent = key => {
   const now = Date.now();
-  const rec = (attempts.get(key) || []).filter(t => now - t < 15 * 60 * 1000);
-  attempts.set(key, rec);
-  return rec.length >= 8;
+  const rec = (attempts.get(key) || []).filter(t => now - t < WINDOW_MS);
+  if (rec.length) attempts.set(key, rec);
+  else attempts.delete(key);
+  return rec;
 };
-const noteAttempt = key => attempts.set(key, [...(attempts.get(key) || []), Date.now()]);
+const rateLimited = (key, max = 8) => recent(key).length >= max;
+const noteAttempt = key => attempts.set(key, [...recent(key), Date.now()]);
+
+// Repeated hostile behaviour from one IP gets it blocked from the whole site.
+const quarantine = (ip, reason) => {
+  if (quarantined.has(ip)) return;
+  quarantined.set(ip, Date.now() + QUARANTINE_MS);
+  console.warn(`[SECURITY] Quarantined ${ip} for 24h: ${reason}`);
+};
+const strike = (ip, reason, limit = 10) => {
+  noteAttempt(`strike|${ip}`);
+  if (recent(`strike|${ip}`).length >= limit) quarantine(ip, reason);
+};
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, until] of quarantined) if (until < now) quarantined.delete(ip);
+  for (const key of attempts.keys()) recent(key);
+}, 10 * 60 * 1000).unref();
+
+const PROBE = /(\.env|\.git|wp-admin|wp-login|phpmyadmin|\.php|\.asp|\/etc\/passwd|\.\.[\\/]|xmlrpc|cgi-bin|\.sql|\.bak)/i;
+const DUMMY_SALT = crypto.randomBytes(16).toString('hex');
+const DUMMY_HASH = crypto.randomBytes(64).toString('hex');
+const SETUP_TOKEN = process.env.SETUP_TOKEN || '';
+const safeEqual = (a, b) => {
+  const x = crypto.createHash('sha256').update(String(a)).digest();
+  const y = crypto.createHash('sha256').update(String(b)).digest();
+  return crypto.timingSafeEqual(x, y);
+};
 
 const wrap = fn => (req, res, next) => Promise.resolve(fn(req, res, next)).catch(next);
 
@@ -90,6 +121,42 @@ const startSession = async userId => {
   return token;
 };
 
+app.use((req, res, next) => {
+  const until = quarantined.get(req.ip);
+  if (until && until > Date.now()) return res.status(403).type('text').send('Access blocked.');
+  let decoded = req.path;
+  try { decoded = decodeURIComponent(req.path); } catch { /* malformed encoding is itself suspicious */ strike(req.ip, 'malformed URL', 3); }
+  if (PROBE.test(decoded)) {
+    strike(req.ip, `probing ${req.path}`, 3);
+    return res.status(404).type('text').send('Not found.');
+  }
+  next();
+});
+
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+      "font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; media-src 'self' blob:; " +
+      "connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+  );
+  if (req.path.startsWith('/api')) res.setHeader('Cache-Control', 'no-store');
+  next();
+});
+
+// Global flood control per IP.
+app.use((req, res, next) => {
+  const key = `req|${req.ip}`;
+  noteAttempt(key);
+  if (rateLimited(key, 3000)) { strike(req.ip, 'request flood', 3); return fail(res, 429, 'Too many requests.'); }
+  next();
+});
+
 app.use(express.json({ limit: '12mb' }));
 app.use('/api', auth);
 
@@ -112,6 +179,14 @@ app.get('/api/bootstrap', wrap(async (req, res) => {
 
 // ---------- auth ----------
 app.post('/api/setup-admin', wrap(async (req, res) => {
+  const setupKey = `setup|${req.ip}`;
+  if (rateLimited(setupKey, 5)) return fail(res, 429, 'Too many attempts. Try again later.');
+  if (!SETUP_TOKEN) return fail(res, 503, 'Setup is disabled: SETUP_TOKEN is not configured on the server.');
+  if (!safeEqual(req.body.setupCode || '', SETUP_TOKEN)) {
+    noteAttempt(setupKey);
+    strike(req.ip, 'bad admin setup code', 5);
+    return fail(res, 403, 'Invalid setup code.');
+  }
   const name = str(req.body.name, 100);
   const email = str(req.body.email, 200).toLowerCase();
   const password = String(req.body.password || '');
@@ -135,14 +210,22 @@ app.post('/api/login', wrap(async (req, res) => {
   const email = str(req.body.email, 200).toLowerCase();
   const password = String(req.body.password || '');
   const key = `${req.ip}|${email}`;
-  if (rateLimited(key)) return fail(res, 429, 'Too many attempts. Try again in 15 minutes.');
+  const acctKey = `acct|${email}`;
+  const ipKey = `ip|${req.ip}`;
+  if (rateLimited(key) || rateLimited(acctKey, 15) || rateLimited(ipKey, 20)) {
+    return fail(res, 429, 'Too many attempts. Try again in 15 minutes.');
+  }
   const { rows } = await pool.query(
     `SELECT u.*, p.data->>'name' AS partner_name FROM users u LEFT JOIN partners p ON p.id = u.partner_id WHERE u.email = $1`,
     [email]
   );
   const u = rows[0];
-  if (!u || !(await verifyPassword(password, u.salt, u.hash))) {
+  const ok = await verifyPassword(password, u ? u.salt : DUMMY_SALT, u ? u.hash : DUMMY_HASH);
+  if (!u || !ok) {
     noteAttempt(key);
+    noteAttempt(acctKey);
+    noteAttempt(ipKey);
+    strike(req.ip, `repeated failed logins (${email})`, 25);
     return fail(res, 401, 'Invalid email or password.');
   }
   res.json({ success: true, token: await startSession(u.id), user: publicUser(u) });

@@ -47,7 +47,7 @@ interface AppContextType {
 
   // Authentication
   hasAdmin: boolean;
-  setupAdmin: (name: string, email: string, password: string) => Promise<AuthResult>;
+  setupAdmin: (name: string, email: string, password: string, setupCode: string) => Promise<AuthResult>;
   login: (email: string, password: string) => Promise<AuthResult>;
   logout: () => void;
   isLoading: boolean;
@@ -210,12 +210,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     void refresh();
   };
 
-  const setupAdmin = async (name: string, email: string, password: string): Promise<AuthResult> => {
+  const setupAdmin = async (name: string, email: string, password: string, setupCode: string): Promise<AuthResult> => {
     if (hasAdmin) return { success: false, error: 'An admin account already exists.' };
     if (!name.trim()) return { success: false, error: 'Name is required.' };
     if (!isValidEmail(email)) return { success: false, error: 'Enter a valid email address.' };
     if (password.length < MIN_PASSWORD_LENGTH) return { success: false, error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters.` };
-    const r = await api('POST', '/api/setup-admin', { name: name.trim(), email: email.trim(), password });
+    const r = await api('POST', '/api/setup-admin', { name: name.trim(), email: email.trim(), password, setupCode });
     if (!r.success) return { success: false, error: r.error };
     startSession(r.user, r.token);
     return { success: true };
