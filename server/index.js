@@ -414,6 +414,56 @@ app.post('/api/logout', wrap(async (req, res) => {
   res.json({ success: true });
 }));
 
+// ---------- additional global admins ----------
+app.get('/api/admins', needAdmin, wrap(async (req, res) => {
+  const { rows } = await pool.query(`SELECT id, name, email, totp_enabled FROM users WHERE role = 'admin' ORDER BY name`);
+  res.json({ success: true, admins: rows.map(r => ({ id: r.id, name: r.name, email: r.email, twoFactor: !!r.totp_enabled, you: r.id === req.user.id })) });
+}));
+
+app.post('/api/admins', needAdmin, wrap(async (req, res) => {
+  const key = `newadmin|${req.user.id}`;
+  if (rateLimited(key, 10)) return fail(res, 429, 'Too many attempts. Try again later.');
+  noteAttempt(key);
+  const name = str(req.body.name, 100);
+  const email = str(req.body.email, 200).toLowerCase();
+  const password = String(req.body.password || '');
+  if (!name) return fail(res, 400, 'Name is required.');
+  if (!isValidEmail(email)) return fail(res, 400, 'Enter a valid email address.');
+  if (password.length < MIN_PASSWORD) return fail(res, 400, `Password must be at least ${MIN_PASSWORD} characters.`);
+  const dup = await pool.query(`SELECT 1 FROM users WHERE email = $1`, [email]);
+  if (dup.rows.length) return fail(res, 409, 'This email is already in use.');
+  const { salt, hash } = await hashPassword(password);
+  const id = `user-admin-${Date.now()}`;
+  await pool.query(
+    `INSERT INTO users (id, name, email, role, avatar, title, salt, hash) VALUES ($1, $2, $3, 'admin', $4, 'Global Platform Admin', $5, $6)`,
+    [id, name, email, initials(name), salt, hash]
+  );
+  console.log(`[SECURITY] admin ${req.user.email} created global admin ${email}`);
+  res.json({ success: true, admin: { id, name, email, twoFactor: false, you: false } });
+}));
+
+app.post('/api/admins/:id/reset-2fa', needAdmin, wrap(async (req, res) => {
+  if (req.params.id === req.user.id) return fail(res, 400, 'Use the lost-authenticator option on the login screen for your own account.');
+  const r = await pool.query(
+    `UPDATE users SET totp_secret = NULL, totp_enabled = false, totp_recovery = NULL, totp_last = 0 WHERE id = $1 AND role = 'admin' RETURNING email`,
+    [req.params.id]
+  );
+  if (!r.rows[0]) return fail(res, 404, 'Admin not found.');
+  await pool.query(`DELETE FROM sessions WHERE user_id = $1`, [req.params.id]);
+  console.log(`[SECURITY] admin ${req.user.email} reset 2FA for ${r.rows[0].email}`);
+  res.json({ success: true });
+}));
+
+app.delete('/api/admins/:id', needAdmin, wrap(async (req, res) => {
+  if (req.params.id === req.user.id) return fail(res, 400, 'You cannot remove your own account.');
+  const r = await pool.query(`DELETE FROM users WHERE id = $1 AND role = 'admin' RETURNING email`, [req.params.id]);
+  if (!r.rows[0]) return fail(res, 404, 'Admin not found.');
+  await pool.query(`DELETE FROM sessions WHERE user_id = $1`, [req.params.id]);
+  await pool.query(`DELETE FROM login_codes WHERE user_id = $1`, [req.params.id]);
+  console.log(`[SECURITY] admin ${req.user.email} removed global admin ${r.rows[0].email}`);
+  res.json({ success: true });
+}));
+
 // ---------- partners ----------
 const mergeData = async (db, table, id, patch) => {
   const cur = await db.query(`SELECT data FROM ${table} WHERE id = $1`, [id]);
