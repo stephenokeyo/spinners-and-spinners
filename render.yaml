@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: spinners-app
+    name: spinners
     runtime: node
     plan: free
     buildCommand: npm install --include=dev && npm run build
