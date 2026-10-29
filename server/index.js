@@ -242,14 +242,16 @@ app.use('/api', auth);
 
 // ---------- bootstrap ----------
 app.get('/api/bootstrap', wrap(async (req, res) => {
-  const [admins, partners, products, hero, social] = await Promise.all([
+  const [admins, partners, products, hero, social, showcase] = await Promise.all([
     pool.query(`SELECT 1 FROM users WHERE role = 'admin' LIMIT 1`),
     pool.query(`SELECT data FROM partners ORDER BY created_at`),
     pool.query(`SELECT data FROM products ORDER BY created_at DESC`),
     pool.query(`SELECT value FROM settings WHERE key = 'hero_image'`),
-    pool.query(`SELECT id, partner_id, platform, label, url, icon FROM social_links ORDER BY created_at`)
-  ]);
-  res.json({
+    pool.query(`SELECT id, partner_id, platform, label, url, icon FROM social_links     ORDER BY created_at`),
+        pool.query(`SELECT id, video_id, title, description FROM showcase_videos ORDER BY created_at DESC`)
+      ]);
+      res.json({
+        showcaseVideos: showcase.rows.map(r => ({ id: r.id, videoId: r.video_id, title: r.title, description: r.description })),
     socialLinks: social.rows.map(r => ({ id: r.id, partnerId: r.partner_id || null, platform: r.platform, label: r.label, url: r.url, icon: r.icon || undefined })),
     hasAdmin: admins.rows.length > 0,
     partners: partners.rows.map(r => r.data),
@@ -634,6 +636,31 @@ app.delete('/api/social/:id', wrap(async (req, res) => {
   const pid = rows[0].partner_id;
   if (!(pid ? canManagePartner(req.user, pid) : adminReady(req.user))) return fail(res, 403, 'Not allowed.');
   await pool.query(`DELETE FROM social_links WHERE id = $1`, [req.params.id]);
+  res.json({ success: true });
+}));
+
+// ---------- showcase videos (global admin, public) ----------
+app.post('/api/showcase', wrap(async (req, res) => {
+  if (!adminReady(req.user)) return fail(res, 403, 'Only global admins can add showcase videos.');
+  const b = req.body || {};
+  const title = str(b.title, 120);
+  const description = str(b.description, 600);
+  if (!title || !description) return fail(res, 400, 'Add a title and a description for the video.');
+  const v = await pool.query(`SELECT owner_id FROM videos WHERE id = $1`, [String(b.videoId || '')]);
+  if (!v.rows[0] || v.rows[0].owner_id !== req.user.id) return fail(res, 400, 'Video not found.');
+  const count = await pool.query(`SELECT id FROM showcase_videos`);
+  if (count.rows.length >= 20) return fail(res, 400, 'You can add up to 20 showcase videos.');
+  const id = `show-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`;
+  await pool.query(`INSERT INTO showcase_videos (id, video_id, title, description) VALUES ($1, $2, $3, $4)`, [id, String(b.videoId), title, description]);
+  res.json({ success: true, video: { id, videoId: String(b.videoId), title, description } });
+}));
+
+app.delete('/api/showcase/:id', wrap(async (req, res) => {
+  if (!adminReady(req.user)) return fail(res, 403, 'Not allowed.');
+  const { rows } = await pool.query(`SELECT video_id FROM showcase_videos WHERE id = $1`, [req.params.id]);
+  if (!rows[0]) return fail(res, 404, 'Not found.');
+  await pool.query(`DELETE FROM showcase_videos WHERE id = $1`, [req.params.id]);
+  await pool.query(`DELETE FROM videos WHERE id = $1`, [rows[0].video_id]);
   res.json({ success: true });
 }));
 

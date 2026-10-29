@@ -46,7 +46,17 @@ export interface SocialLink {
   icon?: string;
 }
 
+export interface ShowcaseVideo {
+  id: string;
+  videoId: string;
+  title: string;
+  description: string;
+}
+
 interface AppContextType {
+  showcaseVideos: ShowcaseVideo[];
+  addShowcaseVideo: (input: { file: File; title: string; description: string }) => Promise<AuthResult>;
+  deleteShowcaseVideo: (id: string) => Promise<void>;
   currentUser: User;
   partners: Partner[];
   products: Product[];
@@ -156,6 +166,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [products, setProducts] = useState<Product[]>([]);
   const [siteHeroImage, setSiteHeroImageState] = useState<string>(HERO_IMAGE);
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
+  const [showcaseVideos, setShowcaseVideos] = useState<ShowcaseVideo[]>([]);
   const [files, setFiles] = useState<PartnerFile[]>(() => readStored<PartnerFile[]>('files', []));
   const [orders, setOrders] = useState<Order[]>(() => readStored<Order[]>('orders', []));
   const [chatThreads, setChatThreads] = useState<ChatThread[]>(() => readStored<ChatThread[]>('chats', []));
@@ -195,7 +206,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setPartners(r.partners);
       setProducts(r.products);
       setSiteHeroImageState(r.heroImage || HERO_IMAGE);
-      setSocialLinks(r.socialLinks || []);(r.me);
+      setSocialLinks(r.socialLinks || []);
+      setShowcaseVideos(r.showcaseVideos || []);(r.me);
       if (!r.me && getToken()) setToken(null);
     }
     setIsLoading(false);
@@ -588,6 +600,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return { success: r.success, error: r.error };
   };
 
+  const addShowcaseVideo: AppContextType['addShowcaseVideo'] = async ({ file, title, description }) => {
+    const up = await uploadVideo(file);
+    if (!up.success) return { success: false, error: up.error || 'Could not upload the video.' };
+    const r = await api('POST', '/api/showcase', { videoId: up.videoId, title, description });
+    if (r.success) setShowcaseVideos(prev => [r.video, ...prev]);
+    return { success: r.success, error: r.error };
+  };
+
+  const deleteShowcaseVideo = async (id: string) => {
+    const r = await api('DELETE', `/api/showcase/${encodeURIComponent(id)}`);
+    if (r.success) setShowcaseVideos(prev => prev.filter(v => v.id !== id));
+  };
+
   const deleteSocialLink = async (id: string) => {
     const r = await api('DELETE', `/api/social/${encodeURIComponent(id)}`);
     if (r.success) setSocialLinks(prev => prev.filter(l => l.id !== id));
@@ -642,6 +667,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setProductStock,
         siteHeroImage,
         setSiteHeroImage,
+        showcaseVideos,
+        addShowcaseVideo,
+        deleteShowcaseVideo,
         socialLinks,
         addSocialLink,
         deleteSocialLink,

@@ -1,4 +1,5 @@
 import { AdminsManager } from './AdminsManager';
+import { ShowcaseManager } from './ShowcaseManager';
 import { SocialLinksManager } from './SocialLinksManager';
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
@@ -13,7 +14,8 @@ import {
   FileText,
   AlertTriangle,
   ArrowRight,
-  Plus
+  Plus,
+  Video
 } from 'lucide-react';
 import { ProductManager } from './ProductManager';
 import { fileToCompressedDataUrl } from '../utils/helpers';
@@ -34,7 +36,7 @@ export const AdminDashboard: React.FC = () => {
   } = useApp();
   const [bannerMsg, setBannerMsg] = useState('');
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'partners' | 'communications' | 'files' | 'orders' | 'admins'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'partners' | 'communications' | 'files' | 'orders' | 'admins' | 'showcase'>('overview');
   const [managedPartnerId, setManagedPartnerId] = useState<string | null>(null);
   const emptyForm = {
     name: '', location: '', tagline: '', ethos: '', specialty: '', story: '', bannerText: '',
@@ -193,6 +195,16 @@ export const AdminDashboard: React.FC = () => {
           >
             <ShieldCheck className="w-4 h-4 text-amber-400" />
             <span>Global Admins & Social Pages</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('showcase')}
+            className={`pb-2 border-b-2 flex items-center gap-1.5 whitespace-nowrap ${
+              activeTab === 'showcase' ? 'border-amber-400 text-white font-semibold' : 'border-transparent text-neutral-400 hover:text-white'
+            }`}
+          >
+            <Video className="w-4 h-4 text-amber-400" />
+            <span>Showcase Videos</span>
           </button>
         </div>
       </section>
@@ -605,6 +617,7 @@ export const AdminDashboard: React.FC = () => {
             ))}
           </div>
         )}
+        {activeTab === 'showcase' && <ShowcaseManager />}
         {activeTab === 'admins' && (
           <div>
             <AdminsManager />

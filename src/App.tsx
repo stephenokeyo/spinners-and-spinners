@@ -3,6 +3,7 @@ import { AppProvider, useApp } from './context/AppContext';
 import { PersonaBar } from './components/PersonaBar';
 import { Navbar } from './components/Navbar';
 import { ProductCatalog } from './components/ProductCatalog';
+import { ShowcaseVideos } from './components/ShowcaseVideos';
 import { PartnerWebpage } from './components/PartnerWebpage';
 import { BoutiquesView } from './components/BoutiquesView';
 import { PartnerDashboard } from './components/PartnerDashboard';
@@ -37,7 +38,12 @@ const AppContent: React.FC = () => {
           <TwoFactorSetup />
         ) : (
           <>
-            {currentView === 'catalog' && <ProductCatalog />}
+            {currentView === 'catalog' && (
+              <>
+                <ShowcaseVideos />
+                <ProductCatalog />
+              </>
+            )}
             {currentView === 'partner' && (partners.some(p => p.id === selectedPartnerId) ? <PartnerWebpage /> : <BoutiquesView />)}
             {currentView === 'dashboard' && renderDashboard()}
             {currentView === 'orders' && <OrdersView />}
