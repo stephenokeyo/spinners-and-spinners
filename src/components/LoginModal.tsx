@@ -12,6 +12,7 @@ export const LoginModal: React.FC = () => {
   const [setupCode, setSetupCode] = useState('');
   const [code, setCode] = useState('');
   const [needsCode, setNeedsCode] = useState(false);
+  const [byEmail, setByEmail] = useState(false);
   const [resetMode, setResetMode] = useState(false);
   const [resetCode, setResetCode] = useState('');
   const [notice, setNotice] = useState<string | null>(null);
@@ -50,7 +51,7 @@ export const LoginModal: React.FC = () => {
     setError(null);
     const result = hasAdmin ? await login(email, password, needsCode ? code : undefined) : await setupAdmin(name, email, password, setupCode);
     setBusy(false);
-    if (result.needsCode) setNeedsCode(true);
+    if (result.needsCode) { setNeedsCode(true); setByEmail(result.channel === 'email'); }
     if (result.success) {
           setPassword('');
           setCode('');
@@ -131,12 +132,12 @@ export const LoginModal: React.FC = () => {
             autoComplete="one-time-code"
             value={code}
             onChange={e => setCode(e.target.value)}
-            placeholder="Authenticator code (or recovery code)"
+            placeholder={byEmail ? '6-digit code from your email' : 'Authenticator code (or recovery code)'}
             className={inputCls}
           />
         )}
 
-        {hasAdmin && needsCode && !resetMode && (
+        {hasAdmin && needsCode && !resetMode && !byEmail && (
           <button type="button" onClick={() => { setResetMode(true); setError(null); }} className="text-xs text-neutral-400 underline hover:text-white">
             Lost your authenticator and recovery codes?
           </button>

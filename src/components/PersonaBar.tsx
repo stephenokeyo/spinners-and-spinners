@@ -8,7 +8,7 @@ export const PersonaBar: React.FC = () => {
 
   return (
     <div className="bg-[#121417] border-b border-white/10 px-4 py-2 text-xs">
-      <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+      <div className="w-full flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <span className="text-[#a1a1aa] uppercase tracking-wider text-[11px] font-medium flex items-center gap-1.5">
             <Key className="w-3.5 h-3.5 text-[#c5a059]" />

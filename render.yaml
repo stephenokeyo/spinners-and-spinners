@@ -11,3 +11,7 @@ services:
         sync: false
       - key: SETUP_TOKEN
         sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false

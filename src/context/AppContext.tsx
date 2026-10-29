@@ -35,7 +35,7 @@ export interface NewProductInput {
   videoId?: string;
 }
 
-type AuthResult = { success: boolean; error?: string; needsCode?: boolean };
+type AuthResult = { success: boolean; error?: string; needsCode?: boolean; channel?: string };
 
 interface AppContextType {
   currentUser: User;
@@ -223,7 +223,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const login = async (email: string, password: string, code?: string): Promise<AuthResult> => {
     const r = await api('POST', '/api/login', { email: email.trim(), password, code });
-    if (!r.success) return { success: false, error: r.error, needsCode: !!r.needsCode };
+    if (!r.success) return { success: false, error: r.error, needsCode: !!r.needsCode, channel: r.channel };
     startSession(r.user, r.token);
     return { success: true };
   };

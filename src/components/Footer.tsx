@@ -7,7 +7,7 @@ export const Footer: React.FC = () => {
 
   return (
     <footer className="bg-[#08090a] border-t border-white/10 text-neutral-400 text-xs py-14 px-6">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-10 pb-12 border-b border-white/5">
+      <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-10 pb-12 border-b border-white/5">
         <div className="md:col-span-5 space-y-4">
           <span className="font-editorial text-2xl tracking-[0.2em] font-medium text-white block">
            Spinners&Spinners
@@ -50,7 +50,7 @@ export const Footer: React.FC = () => {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-neutral-500">
+      <div className="w-full pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-neutral-500">
         <p>© {new Date().getFullYear()} Spinners&Spinners. All rights reserved.</p>
         <div className="flex items-center gap-4">
           <span>Private Client Encrypted Protocol</span>

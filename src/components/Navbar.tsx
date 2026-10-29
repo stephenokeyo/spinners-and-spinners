@@ -25,7 +25,7 @@ export const Navbar: React.FC = () => {
 
   return (
     <header className="sticky top-0 z-40 bg-[#0c0d0e]/95 backdrop-blur-md border-b border-white/10">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-8 px-6 py-4">
+      <div className="w-full flex items-center justify-between gap-8 px-6 py-4">
         {/* Zone 1: Single text element wordmark */}
         <button
           onClick={() => navigateTo('catalog')}

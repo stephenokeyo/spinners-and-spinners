@@ -17,7 +17,7 @@ export const BoutiquesView: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#0c0d0e] text-[#f4f2ee] px-6 py-10">
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="w-full space-y-6">
         <div>
           <h1 className="font-editorial text-3xl text-white">Partner Boutiques</h1>
           <p className="text-xs text-neutral-400 mt-1">Every product from every partner and the global admin, in one place.</p>

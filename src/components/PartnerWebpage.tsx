@@ -69,7 +69,7 @@ export const PartnerWebpage: React.FC = () => {
     <div className="min-h-screen bg-[#0a0b0d] text-[#f4f2ee]">
       {/* Top Breadcrumb & Partner Switcher */}
       <div className="bg-[#121417] border-b border-white/10 px-6 py-3">
-        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4 text-xs">
+        <div className="w-full flex flex-wrap items-center justify-between gap-4 text-xs">
           <div className="flex items-center gap-2">
             <button
               onClick={() => navigateTo('catalog')}
@@ -107,7 +107,7 @@ export const PartnerWebpage: React.FC = () => {
       {/* RBAC Cross-Partner Warning Banner (if another partner is browsing) */}
       {isOtherPartner && (
         <div className="bg-amber-950/40 border-b border-amber-500/30 px-6 py-2.5 text-xs text-amber-200">
-          <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+          <div className="w-full flex items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <ShieldAlert className="w-4 h-4 text-amber-400 shrink-0" />
               <span>
@@ -127,7 +127,7 @@ export const PartnerWebpage: React.FC = () => {
 
       {/* Partner Brand Hero & Ethos Banner */}
       <section className="relative border-b border-white/10 bg-gradient-to-b from-neutral-900/60 to-[#0a0b0d] py-12 px-6">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
           <div className="lg:col-span-8 space-y-4">
             <div className="flex flex-wrap items-center gap-3 text-xs">
               <span className="uppercase tracking-[0.25em] text-[#c5a059] font-medium">
@@ -195,7 +195,7 @@ export const PartnerWebpage: React.FC = () => {
 
       {/* Contiguous Purchase Module & Product Spotlight */}
       {activeProduct && (
-        <section className="max-w-7xl mx-auto px-6 py-12 border-b border-white/10">
+        <section className="w-full px-6 py-12 border-b border-white/10">
           <div className="mb-6 flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-[#c5a059]">
               <Scissors className="w-4 h-4" />
@@ -354,7 +354,7 @@ export const PartnerWebpage: React.FC = () => {
       )}
 
       {/* Embedded Live Spinner Chat directly on this Partner Webpage */}
-      <section className="max-w-7xl mx-auto px-6 py-12 border-b border-white/10">
+      <section className="w-full px-6 py-12 border-b border-white/10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-4 space-y-3">
             <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-[#c5a059]">
@@ -476,7 +476,7 @@ export const PartnerWebpage: React.FC = () => {
       </section>
 
       {/* Complete Partner Catalog Collection */}
-      <section className="max-w-7xl mx-auto px-6 py-14">
+      <section className="w-full px-6 py-14">
         <div className="flex items-center justify-between mb-8 border-b border-white/10 pb-4">
           <div>
             <h3 className="font-editorial text-2xl text-white font-medium">

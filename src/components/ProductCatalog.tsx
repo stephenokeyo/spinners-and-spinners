@@ -31,7 +31,7 @@ export const ProductCatalog: React.FC = () => {
     <div className="min-h-screen bg-[#0c0d0e] text-[#f4f2ee]">
       {/* Editorial Hero Campaign */}
       <section className="relative border-b border-white/10 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6 py-14 lg:py-20 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+        <div className="w-full px-6 py-14 lg:py-20 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
           <div className="lg:col-span-6 space-y-6">
             <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-[#c5a059] font-medium">
               <span className="w-6 h-[1px] bg-[#c5a059]" />
@@ -90,7 +90,7 @@ export const ProductCatalog: React.FC = () => {
 
       {/* Featured Partner Houses Selector Strip */}
       <section className="border-b border-white/10 bg-[#121417]/60 py-8 px-6">
-        <div className="max-w-7xl mx-auto">
+        <div className="w-full">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xs uppercase tracking-[0.2em] text-[#a1a1aa] font-semibold">
               Partner Houses in the Guild (Click to visit webpage directly)
@@ -131,7 +131,7 @@ export const ProductCatalog: React.FC = () => {
       </section>
 
       {/* Catalog Filtering & Controls */}
-      <section className="max-w-7xl mx-auto px-6 pt-10 pb-6">
+      <section className="w-full px-6 pt-10 pb-6">
         {/* Partner tabs: every partner added by the admin appears here */}
         <div className="flex items-center gap-1 overflow-x-auto pb-4 mb-4 border-b border-white/10">
           {['All', ...partners.map(p => p.id)].map(id => {
@@ -207,7 +207,7 @@ export const ProductCatalog: React.FC = () => {
       </section>
 
       {/* Main Products Grid */}
-      <section className="max-w-7xl mx-auto px-6 pb-20">
+      <section className="w-full px-6 pb-20">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredProducts.map(product => {
             const partner = partners.find(p => p.id === product.partnerId);

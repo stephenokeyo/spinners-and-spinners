@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import fs from 'node:fs';
 import express from 'express';
 import { createPool } from './db.js';
+import nodemailer from 'nodemailer';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
@@ -119,6 +120,44 @@ const PROBE = /(\.env|\.git|wp-admin|wp-login|phpmyadmin|\.php|\.asp|\/etc\/pass
 const DUMMY_SALT = crypto.randomBytes(16).toString('hex');
 const DUMMY_HASH = crypto.randomBytes(64).toString('hex');
 const SETUP_TOKEN = process.env.SETUP_TOKEN || '';
+
+// ---------- email login codes for partner accounts ----------
+const mailer = process.env.SMTP_USER && process.env.SMTP_PASS
+  ? nodemailer.createTransport({
+      host: process.env.SMTP_HOST || 'smtp.gmail.com',
+      port: Number(process.env.SMTP_PORT) || 465,
+      secure: (Number(process.env.SMTP_PORT) || 465) === 465,
+      auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+      connectionTimeout: 10000, greetingTimeout: 10000, socketTimeout: 15000
+    })
+  : null;
+if (!mailer) console.warn('SMTP_USER/SMTP_PASS not set: partner email verification codes are DISABLED.');
+
+const CODE_TTL_MIN = 10;
+const sendLoginCode = async user => {
+  const code = String(crypto.randomInt(0, 1000000)).padStart(6, '0');
+  await pool.query(
+    `INSERT INTO login_codes (user_id, code_hash, expires_at, attempts, sent_at)
+     VALUES ($1, $2, now() + interval '${CODE_TTL_MIN} minutes', 0, now())
+     ON CONFLICT (user_id) DO UPDATE SET code_hash = $2, expires_at = now() + interval '${CODE_TTL_MIN} minutes', attempts = 0, sent_at = now()`,
+    [user.id, sha(`${user.id}:${code}`)]
+  );
+  await mailer.sendMail({
+    from: `"Spinners&Spinners" <${process.env.SMTP_USER}>`,
+    to: user.email,
+    subject: `Your Spinners&Spinners login code: ${code}`,
+    text: `Your login code is ${code}. It expires in ${CODE_TTL_MIN} minutes.\n\nIf you did not try to sign in, ignore this email and consider changing your password.`
+  });
+};
+const checkLoginCode = async (user, code) => {
+  const { rows } = await pool.query(`SELECT * FROM login_codes WHERE user_id = $1`, [user.id]);
+  const rec = rows[0];
+  if (!rec || new Date(rec.expires_at) < new Date() || rec.attempts >= 5) return false;
+  await pool.query(`UPDATE login_codes SET attempts = attempts + 1 WHERE user_id = $1`, [user.id]);
+  if (!safeEqual(rec.code_hash, sha(`${user.id}:${code}`))) return false;
+  await pool.query(`DELETE FROM login_codes WHERE user_id = $1`, [user.id]);
+  return true;
+};
 const safeEqual = (a, b) => {
   const x = crypto.createHash('sha256').update(String(a)).digest();
   const y = crypto.createHash('sha256').update(String(b)).digest();
@@ -268,6 +307,28 @@ app.post('/api/login', wrap(async (req, res) => {
     noteAttempt(ipKey);
     strike(req.ip, `repeated failed logins (${email})`, 25);
     return fail(res, 401, 'Invalid email or password.');
+  }
+  if (u.role === 'partner' && mailer) {
+    const code = str(req.body.code, 20).replace(/\s/g, '');
+    if (!code) {
+      const sentKey = `mail|${u.id}`;
+      if (rateLimited(sentKey, 5)) return fail(res, 429, 'Too many codes requested. Try again in 15 minutes.');
+      noteAttempt(sentKey);
+      try {
+        await sendLoginCode(u);
+      } catch (e) {
+        console.error('Could not send login code:', e.message);
+        return fail(res, 502, 'Could not send the verification email. Please try again shortly.');
+      }
+      return res.json({ success: false, needsCode: true, channel: 'email', error: `We sent a 6-digit code to ${u.email.replace(/^(.).*(@.*)$/, '$1***$2')}. Enter it to continue.` });
+    }
+    if (!(await checkLoginCode(u, code))) {
+      noteAttempt(key);
+      noteAttempt(acctKey);
+      noteAttempt(ipKey);
+      strike(req.ip, `bad email code (${email})`, 15);
+      return res.status(401).json({ success: false, needsCode: true, channel: 'email', error: 'Invalid or expired code. Sign in again to get a new one.' });
+    }
   }
   if (u.role === 'admin' && u.totp_enabled) {
     const code = str(req.body.code, 20).replace(/\s/g, '');

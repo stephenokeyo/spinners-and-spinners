@@ -106,7 +106,7 @@ export const AdminDashboard: React.FC = () => {
     <div className="min-h-screen bg-[#0a0b0d] text-[#f4f2ee]">
       {/* Top Banner */}
       <section className="bg-neutral-900 border-b border-amber-500/20 px-6 py-6">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="w-full flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 text-xs text-amber-400 uppercase tracking-widest font-mono mb-1">
               <Shield className="w-4 h-4" />
@@ -129,7 +129,7 @@ export const AdminDashboard: React.FC = () => {
         </div>
 
         {/* Tab Controls */}
-        <div className="max-w-7xl mx-auto flex items-center gap-4 mt-6 pt-2 border-t border-white/5 overflow-x-auto text-xs font-medium">
+        <div className="w-full flex items-center gap-4 mt-6 pt-2 border-t border-white/5 overflow-x-auto text-xs font-medium">
           <button
             onClick={() => setActiveTab('overview')}
             className={`pb-2 border-b-2 flex items-center gap-1.5 whitespace-nowrap ${
@@ -185,7 +185,7 @@ export const AdminDashboard: React.FC = () => {
         </div>
       </section>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="w-full px-6 py-8">
         {/* TAB: OVERVIEW */}
         {activeTab === 'overview' && (
           <div className="space-y-8">
