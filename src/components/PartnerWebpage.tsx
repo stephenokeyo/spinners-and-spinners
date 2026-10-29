@@ -344,7 +344,7 @@ export const PartnerWebpage: React.FC = () => {
                     <span>Strict Transactional Isolation Guarantee</span>
                   </div>
                   <p className="text-[11px] text-neutral-300 leading-relaxed font-light">
-                    When you purchase or converse regarding this piece, all chat transcripts, bespoke measurements, and order logs are strictly restricted to <strong>you</strong> and <strong>{partner.name}</strong>. No competing partner can view your dialogues at all unless logged in as Platform Admin.
+                    When you purchase or converse regarding this piece, all chat transcripts, Spinners&amp;Spinners fashions, and order logs are strictly restricted to <strong>you</strong> and <strong>{partner.name}</strong>. No competing partner can view your dialogues at all unless logged in as Platform Admin.
                   </p>
                 </div>
               </div>

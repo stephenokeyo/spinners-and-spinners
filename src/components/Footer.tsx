@@ -77,7 +77,7 @@ export const Footer: React.FC = () => {
             Security & Client Confidentiality
           </h4>
           <p className="text-neutral-400 font-light leading-relaxed text-[11px]">
-            Inquiries, bespoke measurements, and order conversations are strictly sealed between client and chosen spinner. Competing partners have zero clearance to access client records or order dialogues.
+            Inquiries, Spinners&amp;Spinners fashions, and order conversations are strictly sealed between client and chosen spinner. Competing partners have zero clearance to access client records or order dialogues.
           </p>
         </div>
       </div>
