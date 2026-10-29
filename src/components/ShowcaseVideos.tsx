@@ -6,7 +6,18 @@ import { videoUrl } from '../utils/api';
 const ShowcaseCard: React.FC<{ item: ShowcaseVideo }> = ({ item }) => {
   const ref = useRef<HTMLVideoElement>(null);
   const [muted, setMuted] = useState(true);
-  const [failed, setFailed] = useState(false);
+  const [tries, setTries] = useState(0);
+  const [processing, setProcessing] = useState(false);
+
+  // A freshly uploaded phone video is converted on the server first; keep retrying until it is ready.
+  useEffect(() => {
+    if (!processing) return;
+    const t = setTimeout(() => {
+      setTries(n => n + 1);
+      setProcessing(false);
+    }, 15000);
+    return () => clearTimeout(t);
+  }, [processing]);
 
   // Play only while on screen so many videos don't load at once.
   useEffect(() => {
@@ -21,24 +32,28 @@ const ShowcaseCard: React.FC<{ item: ShowcaseVideo }> = ({ item }) => {
     );
     io.observe(el);
     return () => io.disconnect();
-  }, []);
+  }, [tries]);
 
-  if (failed) return null;
+  if (tries >= 80) return null;
 
   return (
     <div className="relative rounded-xl overflow-hidden bg-black border border-white/10 aspect-video">
-      <video
-        ref={ref}
-        src={videoUrl(item.videoId)}
-        autoPlay
-        muted={muted}
-        loop
-        playsInline
-        preload="metadata"
-        onError={() => setFailed(true)}
-        className="w-full h-full object-cover"
-      />
-      <div className="absolute inset-x-0 bottom-0 p-4 pt-12 bg-gradient-to-t from-black/90 via-black/60 to-transparent">
+      {processing ? (
+        <div className="w-full h-full flex items-center justify-center text-xs text-neutral-400">Preparing video…</div>
+      ) : (
+        <video
+          key={tries}
+          ref={ref}
+          src={videoUrl(item.videoId)}
+          autoPlay
+          muted={muted}
+          loop
+          playsInline
+          preload="metadata"
+          onError={() => setProcessing(true)}
+          className="w-full h-full object-cover"
+        />
+      )}      <div className="absolute inset-x-0 bottom-0 p-4 pt-12 bg-gradient-to-t from-black/90 via-black/60 to-transparent">
         <h3 className="font-serif text-lg text-white leading-tight">{item.title}</h3>
         <p className="text-xs sm:text-sm text-neutral-300 font-light mt-1 line-clamp-3">{item.description}</p>
       </div>
