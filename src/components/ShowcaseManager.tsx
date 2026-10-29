@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Video, Trash2, Upload } from 'lucide-react';
 import { useApp } from '../context/AppContext';
-import { MAX_VIDEO_MB, videoUrl } from '../utils/api';
+import { videoUrl } from '../utils/api';
 
 export const ShowcaseManager: React.FC = () => {
   const { showcaseVideos, addShowcaseVideo, deleteShowcaseVideo } = useApp();
@@ -16,7 +16,6 @@ export const ShowcaseManager: React.FC = () => {
     e.target.value = '';
     if (!f) return;
     if (!f.type.startsWith('video/')) return setFeedback({ ok: false, msg: 'Please choose a video file.' });
-    if (f.size > MAX_VIDEO_MB * 1024 * 1024) return setFeedback({ ok: false, msg: `Video must be under ${MAX_VIDEO_MB} MB.` });
     setFeedback(null);
     setFile(f);
   };
@@ -47,7 +46,7 @@ export const ShowcaseManager: React.FC = () => {
       <form onSubmit={submit} className="space-y-3">
         <label className="flex items-center gap-2 text-xs text-neutral-300 bg-black/40 border border-white/10 rounded px-3 py-2.5 cursor-pointer hover:border-amber-400/50">
           <Upload className="w-4 h-4 text-amber-400 shrink-0" />
-          <span className="truncate">{file ? file.name : `Choose a video (max ${MAX_VIDEO_MB} MB)`}</span>
+          <span className="truncate">{file ? file.name : 'Choose a video'}</span>
           <input type="file" accept="video/*" onChange={pick} className="hidden" />
         </label>
         <input

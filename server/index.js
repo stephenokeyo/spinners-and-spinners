@@ -8,6 +8,7 @@ import nodemailer from 'nodemailer';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
+const MAX_ADMIN_VIDEO_BYTES = 200 * 1024 * 1024;
 const MIN_PASSWORD = 8;
 const SESSION_DAYS = 30;
 
@@ -762,9 +763,10 @@ app.post('/api/products/:id/sold', wrap(async (req, res) => {
 }));
 
 // ---------- videos ----------
-app.post('/api/videos', express.raw({ type: 'video/*', limit: MAX_VIDEO_BYTES }), wrap(async (req, res) => {
+app.post('/api/videos', express.raw({ type: 'video/*', limit: MAX_ADMIN_VIDEO_BYTES }), wrap(async (req, res) => {
   if (!req.user || (req.user.role !== 'admin' && req.user.role !== 'partner')) return fail(res, 403, 'Login required.');
   if (!Buffer.isBuffer(req.body) || !req.body.length) return fail(res, 400, 'No video received.');
+  if (req.user.role !== 'admin' && req.body.length > MAX_VIDEO_BYTES) return fail(res, 413, 'Video must be under 50 MB.');
   const id = `vid-${crypto.randomUUID()}`;
   await pool.query(`INSERT INTO videos (id, owner_id, mime, data) VALUES ($1, $2, $3, $4)`, [
     id,
