@@ -1,0 +1,137 @@
+import React from 'react';
+import { useApp } from '../context/AppContext';
+import { ShoppingBag, Lock, FolderLock, ShieldCheck, Compass, Sparkles } from 'lucide-react';
+
+export const Navbar: React.FC = () => {
+  const {
+    currentUser,
+    currentView,
+    navigateTo,
+    orders,
+    chatThreads,
+    partners,
+    canAccessCommunication
+  } = useApp();
+
+  // Calculate unread or active orders for client or partner
+  const relevantOrders = orders.filter(o => {
+    if (currentUser.role === 'admin') return true;
+    if (currentUser.role === 'client') return o.clientId === currentUser.id;
+    if (currentUser.role === 'partner') return o.partnerId === currentUser.partnerId;
+    return false;
+  });
+
+  const accessibleChats = chatThreads.filter(t => canAccessCommunication(t));
+
+  return (
+    <header className="sticky top-0 z-40 bg-[#0c0d0e]/95 backdrop-blur-md border-b border-white/10">
+      <div className="max-w-7xl mx-auto flex items-center justify-between gap-8 px-6 py-4">
+        {/* Zone 1: Single text element wordmark */}
+        <button
+          onClick={() => navigateTo('catalog')}
+          className="text-left group cursor-pointer"
+        >
+          <span className="font-editorial text-2xl tracking-[0.2em] font-medium text-white group-hover:text-[#c5a059] transition-colors whitespace-nowrap shrink-0 block">
+           Spinners&Spinners
+          </span>
+          <span className="text-[10px] uppercase tracking-[0.3em] text-[#a1a1aa] block -mt-1 font-sans">
+            Haute Couture Guild & Direct Brand Webpages
+          </span>
+        </button>
+
+        {/* Zone 2: 4–5 clean single-line text navigation links */}
+        <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-neutral-300">
+          <button
+            onClick={() => navigateTo('catalog')}
+            className={`hover:text-white transition-colors whitespace-nowrap shrink-0 pb-0.5 border-b-2 ${
+              currentView === 'catalog' ? 'border-[#c5a059] text-white' : 'border-transparent text-neutral-400'
+            }`}
+          >
+            All Products
+          </button>
+
+          {/* Partner Houses Quick Dropdown / Link */}
+          <button
+            onClick={() => navigateTo('partner', '')}
+            className={`hover:text-white transition-colors whitespace-nowrap shrink-0 pb-0.5 border-b-2 ${
+              currentView === 'partner' ? 'border-[#c5a059] text-white' : 'border-transparent text-neutral-400'
+            }`}
+          >
+            Partner Boutiques
+          </button>
+
+          {/* Partner File Vault link: partners and admin only */}
+          {currentUser.role !== 'client' && (
+            <button
+              onClick={() => {
+                if (currentUser.role === 'partner' && currentUser.partnerId) {
+                  navigateTo('dashboard', currentUser.partnerId);
+                } else {
+                  navigateTo('dashboard');
+                }
+              }}
+              className={`hover:text-white transition-colors whitespace-nowrap shrink-0 pb-0.5 border-b-2 flex items-center gap-1.5 ${
+                currentView === 'dashboard' ? 'border-[#c5a059] text-white' : 'border-transparent text-neutral-400'
+              }`}
+            >
+              <FolderLock className="w-3.5 h-3.5 text-[#c5a059]" />
+              <span>Partner Files Vault</span>
+            </button>
+          )}
+
+          {/* Orders / Commissions */}
+          <button
+            onClick={() => navigateTo('orders')}
+            className={`hover:text-white transition-colors whitespace-nowrap shrink-0 pb-0.5 border-b-2 flex items-center gap-1.5 ${
+              currentView === 'orders' ? 'border-[#c5a059] text-white' : 'border-transparent text-neutral-400'
+            }`}
+          >
+            <ShoppingBag className="w-3.5 h-3.5 text-neutral-400" />
+            <span>Orders & Fulfillments</span>
+            {relevantOrders.length > 0 && (
+              <span className="text-[11px] font-mono text-[#c5a059] ml-0.5">
+                ({relevantOrders.length})
+              </span>
+            )}
+          </button>
+
+          {/* Admin link if Admin */}
+          {currentUser.role === 'admin' && (
+            <button
+              onClick={() => navigateTo('dashboard')}
+              className="text-amber-400 hover:text-amber-300 font-semibold text-xs tracking-wider uppercase border border-amber-500/30 px-2 py-0.5 rounded bg-amber-500/10 whitespace-nowrap"
+            >
+              Executive Console
+            </button>
+          )}
+        </nav>
+
+        {/* Zone 3: 1 primary action */}
+        <div className="flex items-center gap-3 shrink-0">
+          {currentUser.role === 'partner' ? (
+            <button
+              onClick={() => navigateTo('dashboard', currentUser.partnerId)}
+              className="px-4 py-2 text-xs font-semibold tracking-wider uppercase text-black bg-[#c5a059] hover:bg-[#d4b069] rounded transition-all whitespace-nowrap shrink-0 shadow-sm"
+            >
+              Enter {currentUser.partnerName} Spinner
+            </button>
+          ) : currentUser.role === 'admin' ? (
+            <button
+              onClick={() => navigateTo('dashboard')}
+              className="px-4 py-2 text-xs font-semibold tracking-wider uppercase text-white bg-neutral-800 hover:bg-neutral-700 border border-white/20 rounded transition-all whitespace-nowrap shrink-0"
+            >
+              Omni Admin Oversight
+            </button>
+          ) : (
+            <button
+              onClick={() => navigateTo('partner', '')}
+              className="px-4 py-2 text-xs font-semibold tracking-wider uppercase text-black bg-[#c5a059] hover:bg-[#d4b069] rounded transition-all whitespace-nowrap shrink-0 shadow-sm"
+            >
+              Visit Partner Boutiques
+            </button>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+};
