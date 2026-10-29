@@ -170,22 +170,22 @@ export const ProductCatalog: React.FC = () => {
           </div>
 
           {/* Search & Partner filter dropdown */}
-          <div className="flex items-center gap-3">
-            <div className="relative">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="relative flex-1 sm:flex-none min-w-0">
               <Search className="w-3.5 h-3.5 text-neutral-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Search materials, silk, coats..."
-                className="bg-white/5 border border-white/10 rounded pl-8 pr-3 py-1.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-[#c5a059] w-48 sm:w-56"
+                className="bg-white/5 border border-white/10 rounded pl-8 pr-3 py-1.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-[#c5a059] w-full sm:w-56"
               />
             </div>
 
             <select
               value={selectedPartnerFilter}
               onChange={e => setSelectedPartnerFilter(e.target.value)}
-              className="bg-neutral-900 border border-white/10 rounded px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#c5a059]"
+              className="bg-neutral-900 border border-white/10 rounded px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#c5a059] min-w-0 max-w-[45%] sm:max-w-none"
             >
               <option value="All">All Partner Houses</option>
               {partners.map(p => (
