@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { MIN_PASSWORD_LENGTH } from '../utils/auth';
 import { X, Lock } from 'lucide-react';
+import { api } from '../utils/api';
 
 export const LoginModal: React.FC = () => {
   const { isLoginModalOpen, setIsLoginModalOpen, hasAdmin, login, setupAdmin } = useApp();
@@ -11,6 +12,25 @@ export const LoginModal: React.FC = () => {
   const [setupCode, setSetupCode] = useState('');
   const [code, setCode] = useState('');
   const [needsCode, setNeedsCode] = useState(false);
+  const [resetMode, setResetMode] = useState(false);
+  const [resetCode, setResetCode] = useState('');
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const resetTwoFactor = async () => {
+    setBusy(true);
+    setError(null);
+    const r = await api('POST', '/api/2fa/reset', { email: email.trim(), password, setupCode: resetCode });
+    setBusy(false);
+    if (r.success) {
+      setResetMode(false);
+      setNeedsCode(false);
+      setCode('');
+      setResetCode('');
+      setNotice('Two-factor was reset. Sign in with your password, then set up your authenticator again.');
+    } else {
+      setError(r.error || 'Reset failed.');
+    }
+  };
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -103,7 +123,7 @@ export const LoginModal: React.FC = () => {
           className={inputCls}
         />
 
-        {hasAdmin && needsCode && (
+        {hasAdmin && needsCode && !resetMode && (
           <input
             required
             autoFocus
@@ -116,6 +136,33 @@ export const LoginModal: React.FC = () => {
           />
         )}
 
+        {hasAdmin && needsCode && !resetMode && (
+          <button type="button" onClick={() => { setResetMode(true); setError(null); }} className="text-xs text-neutral-400 underline hover:text-white">
+            Lost your authenticator and recovery codes?
+          </button>
+        )}
+
+        {resetMode && (
+          <div className="space-y-2">
+            <p className="text-xs text-neutral-400">
+              Enter your email and password above, plus the server setup code (the SETUP_TOKEN set in Render), then reset.
+            </p>
+            <input type="password" autoComplete="off" value={resetCode} onChange={e => setResetCode(e.target.value)} placeholder="Server setup code" className={inputCls} />
+            <button
+              type="button"
+              disabled={busy || !resetCode || !email || !password}
+              onClick={resetTwoFactor}
+              className="w-full py-2 text-xs font-semibold tracking-wider uppercase text-white bg-red-700 hover:bg-red-600 disabled:opacity-60 rounded"
+            >
+              Reset two-factor
+            </button>
+            <button type="button" onClick={() => setResetMode(false)} className="text-xs text-neutral-400 underline hover:text-white">
+              Back
+            </button>
+          </div>
+        )}
+
+        {notice && <p className="text-xs text-emerald-300">{notice}</p>}
         {error && <p className="text-xs text-red-300">{error}</p>}
 
         <button

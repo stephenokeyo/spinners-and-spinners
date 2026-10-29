@@ -296,6 +296,29 @@ app.post('/api/login', wrap(async (req, res) => {
   res.json({ success: true, token: await startSession(u.id), user: publicUser(u) });
 }));
 
+app.post('/api/2fa/reset', wrap(async (req, res) => {
+  const email = str(req.body.email, 200).toLowerCase();
+  const password = String(req.body.password || '');
+  const ipKey = `reset|${req.ip}`;
+  if (rateLimited(ipKey, 5)) return fail(res, 429, 'Too many attempts. Try again later.');
+  const { rows } = await pool.query(`SELECT * FROM users WHERE email = $1 AND role = 'admin'`, [email]);
+  const u = rows[0];
+  const pwOk = await verifyPassword(password, u ? u.salt : DUMMY_SALT, u ? u.hash : DUMMY_HASH);
+  const codeOk = !!SETUP_TOKEN && safeEqual(req.body.setupCode || '', SETUP_TOKEN);
+  if (!u || !pwOk || !codeOk) {
+    noteAttempt(ipKey);
+    strike(req.ip, 'bad two-factor reset attempt', 5);
+    return fail(res, 401, 'Reset failed. Check your email, password and setup code.');
+  }
+  await pool.query(
+    `UPDATE users SET totp_enabled = false, totp_secret = NULL, totp_recovery = NULL, totp_last = 0 WHERE id = $1`,
+    [u.id]
+  );
+  await pool.query(`DELETE FROM sessions WHERE user_id = $1`, [u.id]);
+  console.warn(`[SECURITY] Two-factor reset for admin ${email} from ${req.ip}`);
+  res.json({ success: true });
+}));
+
 app.post('/api/2fa/setup', wrap(async (req, res) => {
   if (req.user?.role !== 'admin') return fail(res, 403, 'Only the admin can set up two-factor.');
   if (req.user.totp_enabled) return fail(res, 409, 'Two-factor is already enabled.');
