@@ -88,7 +88,9 @@ export const createPool = async () => {
   if (process.env.DATABASE_URL) {
     pool = new pg.Pool({
       connectionString: process.env.DATABASE_URL,
-      ssl: sslConfig()
+      ssl: sslConfig(),
+      max: 5,
+      idleTimeoutMillis: 10000
     });
   } else {
     // Local development only: in-memory database, data is lost on restart.
