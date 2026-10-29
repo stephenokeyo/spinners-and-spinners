@@ -1,4 +1,7 @@
 import pg from 'pg';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS users (
@@ -10,8 +13,16 @@ CREATE TABLE IF NOT EXISTS users (
   avatar TEXT,
   title TEXT,
   salt TEXT NOT NULL,
-  hash TEXT NOT NULL
+  hash TEXT NOT NULL,
+  totp_secret TEXT,
+  totp_enabled BOOLEAN NOT NULL DEFAULT false,
+  totp_recovery TEXT,
+  totp_last BIGINT NOT NULL DEFAULT 0
 );
+ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_secret TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_enabled BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_recovery TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS totp_last BIGINT NOT NULL DEFAULT 0;
 CREATE TABLE IF NOT EXISTS sessions (
   token_hash TEXT PRIMARY KEY,
   user_id TEXT NOT NULL,
@@ -40,12 +51,21 @@ CREATE TABLE IF NOT EXISTS settings (
 );
 `;
 
+const here = path.dirname(fileURLToPath(import.meta.url));
+const sslConfig = () => {
+  if (process.env.DATABASE_SSL === 'false') return false;
+  // Verify the server certificate against the Supabase CA instead of trusting any certificate.
+  const caFile = path.join(here, 'certs', 'supabase-ca.crt');
+  if (fs.existsSync(caFile)) return { ca: fs.readFileSync(caFile, 'utf8'), rejectUnauthorized: true };
+  return { rejectUnauthorized: false };
+};
+
 export const createPool = async () => {
   let pool;
   if (process.env.DATABASE_URL) {
     pool = new pg.Pool({
       connectionString: process.env.DATABASE_URL,
-      ssl: process.env.DATABASE_SSL === 'false' ? false : { rejectUnauthorized: false }
+      ssl: sslConfig()
     });
   } else {
     // Local development only: in-memory database, data is lost on restart.

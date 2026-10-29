@@ -9,6 +9,7 @@ export interface User {
   partnerName?: string;
   avatar: string;
   title: string;
+  twoFactor?: boolean;
 }
 
 export interface Partner {

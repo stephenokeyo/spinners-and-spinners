@@ -9,6 +9,8 @@ export const LoginModal: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [setupCode, setSetupCode] = useState('');
+  const [code, setCode] = useState('');
+  const [needsCode, setNeedsCode] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -17,6 +19,8 @@ export const LoginModal: React.FC = () => {
   const close = () => {
     setIsLoginModalOpen(false);
     setPassword('');
+    setCode('');
+    setNeedsCode(false);
     setError(null);
   };
 
@@ -24,10 +28,13 @@ export const LoginModal: React.FC = () => {
     e.preventDefault();
     setBusy(true);
     setError(null);
-    const result = hasAdmin ? await login(email, password) :     await setupAdmin(name, email, password, setupCode);
+    const result = hasAdmin ? await login(email, password, needsCode ? code : undefined) : await setupAdmin(name, email, password, setupCode);
     setBusy(false);
+    if (result.needsCode) setNeedsCode(true);
     if (result.success) {
-      setPassword('');
+          setPassword('');
+          setCode('');
+          setNeedsCode(false);
           setSetupCode('');
     } else {
       setError(result.error || 'Something went wrong.');
@@ -95,6 +102,19 @@ export const LoginModal: React.FC = () => {
           placeholder={hasAdmin ? 'Password' : `Password (min ${MIN_PASSWORD_LENGTH} characters)`}
           className={inputCls}
         />
+
+        {hasAdmin && needsCode && (
+          <input
+            required
+            autoFocus
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            value={code}
+            onChange={e => setCode(e.target.value)}
+            placeholder="Authenticator code (or recovery code)"
+            className={inputCls}
+          />
+        )}
 
         {error && <p className="text-xs text-red-300">{error}</p>}
 

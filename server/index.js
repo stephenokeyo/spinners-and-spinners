@@ -46,8 +46,44 @@ const publicUser = u => ({
   partnerId: u.partner_id || undefined,
   partnerName: u.partner_name || undefined,
   avatar: u.avatar,
-  title: u.title
+  title: u.title,
+  twoFactor: !!u.totp_enabled
 });
+
+// ---------- TOTP (RFC 6238) two-factor for the admin ----------
+const B32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+const b32encode = buf => {
+  let bits = '';
+  for (const b of buf) bits += b.toString(2).padStart(8, '0');
+  return (bits.match(/.{1,5}/g) || []).map(c => B32[parseInt(c.padEnd(5, '0'), 2)]).join('');
+};
+const b32decode = s => {
+  let bits = '';
+  for (const ch of s.replace(/=+$/, '')) bits += B32.indexOf(ch).toString(2).padStart(5, '0');
+  return Buffer.from((bits.match(/.{8}/g) || []).map(b => parseInt(b, 2)));
+};
+const hotp = (secret, counter) => {
+  const msg = Buffer.alloc(8);
+  msg.writeBigUInt64BE(BigInt(counter));
+  const h = crypto.createHmac('sha1', b32decode(secret)).update(msg).digest();
+  const o = h[h.length - 1] & 0xf;
+  const n = ((h[o] & 0x7f) << 24) | (h[o + 1] << 16) | (h[o + 2] << 8) | h[o + 3];
+  return String(n % 1000000).padStart(6, '0');
+};
+// Returns the matched time step (so it can't be replayed), or 0 when the code is wrong.
+const verifyTotp = (secret, code, lastStep) => {
+  if (!/^\d{6}$/.test(code)) return 0;
+  const now = Math.floor(Date.now() / 30000);
+  for (let step = now - 1; step <= now + 1; step++) {
+    if (step > lastStep && safeEqual(hotp(secret, step), code)) return step;
+  }
+  return 0;
+};
+const newRecoveryCodes = () =>
+  Array.from({ length: 8 }, () => {
+    const h = crypto.randomBytes(5).toString('hex');
+    return `${h.slice(0, 5)}-${h.slice(5)}`;
+  });
 
 const WINDOW_MS = 15 * 60 * 1000;
 const QUARANTINE_MS = 24 * 60 * 60 * 1000;
@@ -107,10 +143,15 @@ const auth = wrap(async (req, _res, next) => {
   }
   next();
 });
-const needAdmin = (req, res, next) =>
-  req.user?.role === 'admin' ? next() : fail(res, 403, 'Only the global admin can do this.');
+const adminReady = u => u?.role === 'admin' && !!u.totp_enabled;
+const needAdmin = (req, res, next) => {
+  if (req.user?.role === 'admin' && !req.user.totp_enabled) {
+    return fail(res, 403, 'Set up two-factor authentication before using admin features.');
+  }
+  return adminReady(req.user) ? next() : fail(res, 403, 'Only the global admin can do this.');
+};
 const canManagePartner = (user, partnerId) =>
-  !!user && (user.role === 'admin' || (user.role === 'partner' && user.partner_id === partnerId));
+  !!user && (adminReady(user) || (user.role === 'partner' && user.partner_id === partnerId));
 
 const startSession = async userId => {
   const token = crypto.randomBytes(32).toString('hex');
@@ -228,7 +269,58 @@ app.post('/api/login', wrap(async (req, res) => {
     strike(req.ip, `repeated failed logins (${email})`, 25);
     return fail(res, 401, 'Invalid email or password.');
   }
+  if (u.role === 'admin' && u.totp_enabled) {
+    const code = str(req.body.code, 20).replace(/\s/g, '');
+    if (!code) return res.json({ success: false, needsCode: true, error: 'Enter the 6-digit code from your authenticator app.' });
+    let good = false;
+    const step = verifyTotp(u.totp_secret, code, Number(u.totp_last));
+    if (step) {
+      const upd = await pool.query(`UPDATE users SET totp_last = $2 WHERE id = $1 AND totp_last < $2`, [u.id, step]);
+      good = upd.rowCount > 0;
+    } else {
+      const hashes = JSON.parse(u.totp_recovery || '[]');
+      const h = sha(code.toLowerCase());
+      if (hashes.includes(h)) {
+        await pool.query(`UPDATE users SET totp_recovery = $2 WHERE id = $1`, [u.id, JSON.stringify(hashes.filter(x => x !== h))]);
+        good = true;
+      }
+    }
+    if (!good) {
+      noteAttempt(key);
+      noteAttempt(acctKey);
+      noteAttempt(ipKey);
+      strike(req.ip, `bad two-factor code (${email})`, 15);
+      return res.status(401).json({ success: false, needsCode: true, error: 'Invalid code.' });
+    }
+  }
   res.json({ success: true, token: await startSession(u.id), user: publicUser(u) });
+}));
+
+app.post('/api/2fa/setup', wrap(async (req, res) => {
+  if (req.user?.role !== 'admin') return fail(res, 403, 'Only the admin can set up two-factor.');
+  if (req.user.totp_enabled) return fail(res, 409, 'Two-factor is already enabled.');
+  const secret = b32encode(crypto.randomBytes(20));
+  await pool.query(`UPDATE users SET totp_secret = $2 WHERE id = $1`, [req.user.id, secret]);
+  const label = encodeURIComponent(`Spinners&Spinners:${req.user.email}`);
+  res.json({ success: true, secret, otpauth: `otpauth://totp/${label}?secret=${secret}&issuer=Spinners%26Spinners` });
+}));
+
+app.post('/api/2fa/enable', wrap(async (req, res) => {
+  if (req.user?.role !== 'admin') return fail(res, 403, 'Only the admin can set up two-factor.');
+  if (req.user.totp_enabled) return fail(res, 409, 'Two-factor is already enabled.');
+  const key = `2fa|${req.user.id}`;
+  if (rateLimited(key, 8)) return fail(res, 429, 'Too many attempts. Try again later.');
+  const step = req.user.totp_secret ? verifyTotp(req.user.totp_secret, str(req.body.code, 10).replace(/\s/g, ''), 0) : 0;
+  if (!step) {
+    noteAttempt(key);
+    return fail(res, 400, 'That code is not correct. Check the app and try again.');
+  }
+  const codes = newRecoveryCodes();
+  await pool.query(
+    `UPDATE users SET totp_enabled = true, totp_last = $2, totp_recovery = $3 WHERE id = $1`,
+    [req.user.id, step, JSON.stringify(codes.map(c => sha(c)))]
+  );
+  res.json({ success: true, recoveryCodes: codes });
 }));
 
 app.post('/api/logout', wrap(async (req, res) => {

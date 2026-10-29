@@ -7,6 +7,7 @@ import { PartnerWebpage } from './components/PartnerWebpage';
 import { BoutiquesView } from './components/BoutiquesView';
 import { PartnerDashboard } from './components/PartnerDashboard';
 import { AdminDashboard } from './components/AdminDashboard';
+import { TwoFactorSetup } from './components/TwoFactorSetup';
 import { OrdersView } from './components/OrdersView';
 import { LiveChatWidget } from './components/LiveChatWidget';
 import { CheckoutModal } from './components/CheckoutModal';
@@ -32,10 +33,16 @@ const AppContent: React.FC = () => {
       <Navbar />
 
       <main className="flex-1">
-        {currentView === 'catalog' && <ProductCatalog />}
-        {currentView === 'partner' && (partners.some(p => p.id === selectedPartnerId) ? <PartnerWebpage /> : <BoutiquesView />)}
-        {currentView === 'dashboard' && renderDashboard()}
-        {currentView === 'orders' && <OrdersView />}
+        {currentUser.role === 'admin' && currentUser.twoFactor === false ? (
+          <TwoFactorSetup />
+        ) : (
+          <>
+            {currentView === 'catalog' && <ProductCatalog />}
+            {currentView === 'partner' && (partners.some(p => p.id === selectedPartnerId) ? <PartnerWebpage /> : <BoutiquesView />)}
+            {currentView === 'dashboard' && renderDashboard()}
+            {currentView === 'orders' && <OrdersView />}
+          </>
+        )}
       </main>
 
       <Footer />

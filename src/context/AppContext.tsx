@@ -35,7 +35,7 @@ export interface NewProductInput {
   videoId?: string;
 }
 
-type AuthResult = { success: boolean; error?: string };
+type AuthResult = { success: boolean; error?: string; needsCode?: boolean };
 
 interface AppContextType {
   currentUser: User;
@@ -48,7 +48,7 @@ interface AppContextType {
   // Authentication
   hasAdmin: boolean;
   setupAdmin: (name: string, email: string, password: string, setupCode: string) => Promise<AuthResult>;
-  login: (email: string, password: string) => Promise<AuthResult>;
+  login: (email: string, password: string, code?: string) => Promise<AuthResult>;
   logout: () => void;
   isLoading: boolean;
 
@@ -221,9 +221,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return { success: true };
   };
 
-  const login = async (email: string, password: string): Promise<AuthResult> => {
-    const r = await api('POST', '/api/login', { email: email.trim(), password });
-    if (!r.success) return { success: false, error: r.error };
+  const login = async (email: string, password: string, code?: string): Promise<AuthResult> => {
+    const r = await api('POST', '/api/login', { email: email.trim(), password, code });
+    if (!r.success) return { success: false, error: r.error, needsCode: !!r.needsCode };
     startSession(r.user, r.token);
     return { success: true };
   };

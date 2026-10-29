@@ -25,7 +25,7 @@ export const api = async (method: string, url: string, body?: unknown, raw?: { b
   try {
     const res = await fetch(url, { method, headers, body: payload });
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) return { success: false, error: data.error || `Request failed (${res.status}).` };
+    if (!res.ok) return { ...data, success: false, error: data.error || `Request failed (${res.status}).` };
     return { success: true, ...data };
   } catch {
     return { success: false, error: 'Cannot reach the server. Check your connection and try again.' };
