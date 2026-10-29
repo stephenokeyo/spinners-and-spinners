@@ -184,6 +184,16 @@ export const AdminDashboard: React.FC = () => {
             <span>All Orders & Transactions</span>
             <span className="font-mono text-[11px] text-emerald-400">({orders.length})</span>
           </button>
+
+          <button
+            onClick={() => setActiveTab('admins')}
+            className={`pb-2 border-b-2 flex items-center gap-1.5 whitespace-nowrap ${
+              activeTab === 'admins' ? 'border-amber-400 text-white font-semibold' : 'border-transparent text-neutral-400 hover:text-white'
+            }`}
+          >
+            <ShieldCheck className="w-4 h-4 text-amber-400" />
+            <span>Global Admins & Social Pages</span>
+          </button>
         </div>
       </section>
 
