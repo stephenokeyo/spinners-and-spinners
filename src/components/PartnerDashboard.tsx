@@ -1,3 +1,4 @@
+import { SocialLinksManager } from './SocialLinksManager';
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { Partner, PartnerFile, ChatThread, Order } from '../types';
@@ -678,6 +679,7 @@ export const PartnerDashboard: React.FC = () => {
           </div>
         </div>
       )}
+      <div className="w-full px-6 pb-10"><SocialLinksManager partnerId={partner.id} title={`${partner.name} social media pages`} /></div>
     </div>
   );
 };

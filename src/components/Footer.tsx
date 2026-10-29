@@ -1,9 +1,10 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
 import { ShieldCheck, Lock, Sparkles } from 'lucide-react';
+import { SocialIcon } from './SocialIcon';
 
 export const Footer: React.FC = () => {
-  const { partners, navigateTo } = useApp();
+  const { partners, navigateTo, socialLinks } = useApp();
 
   return (
     <footer className="bg-[#08090a] border-t border-white/10 text-neutral-400 text-xs py-14 px-6">
@@ -38,6 +39,37 @@ export const Footer: React.FC = () => {
               </li>
             ))}
           </ul>
+
+          {socialLinks.length > 0 && (
+            <div className="pt-4 space-y-3">
+              <h4 className="text-xs uppercase tracking-wider text-white font-semibold">Social Media</h4>
+              {[{ id: null as string | null, name: 'Spinners&Spinners' }, ...partners.map(p => ({ id: p.id as string | null, name: p.name }))]
+                .map(group => {
+                  const links = socialLinks.filter(l => (l.partnerId || null) === group.id);
+                  if (!links.length) return null;
+                  return (
+                    <div key={group.id || 'global'} className="space-y-1.5">
+                      <p className="text-[11px] text-neutral-500">{group.name}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {links.map(l => (
+                          <a
+                            key={l.id}
+                            href={l.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title={l.label}
+                            aria-label={`${group.name} on ${l.label}`}
+                            className="w-8 h-8 rounded-full border border-white/10 bg-white/5 flex items-center justify-center text-neutral-300 hover:text-[#c5a059] hover:border-[#c5a059]/50 transition-colors"
+                          >
+                            <SocialIcon platform={l.platform} icon={l.icon} />
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          )}
         </div>
 
         <div className="md:col-span-4 space-y-3">

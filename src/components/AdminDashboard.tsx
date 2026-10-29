@@ -1,3 +1,4 @@
+import { SocialLinksManager } from './SocialLinksManager';
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import {
@@ -593,6 +594,7 @@ export const AdminDashboard: React.FC = () => {
             ))}
           </div>
         )}
+        <SocialLinksManager partnerId={null} title="Site-wide social media pages" />
       </div>
     </div>
   );

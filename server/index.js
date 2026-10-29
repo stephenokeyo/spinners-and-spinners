@@ -242,13 +242,15 @@ app.use('/api', auth);
 
 // ---------- bootstrap ----------
 app.get('/api/bootstrap', wrap(async (req, res) => {
-  const [admins, partners, products, hero] = await Promise.all([
+  const [admins, partners, products, hero, social] = await Promise.all([
     pool.query(`SELECT 1 FROM users WHERE role = 'admin' LIMIT 1`),
     pool.query(`SELECT data FROM partners ORDER BY created_at`),
     pool.query(`SELECT data FROM products ORDER BY created_at DESC`),
-    pool.query(`SELECT value FROM settings WHERE key = 'hero_image'`)
+    pool.query(`SELECT value FROM settings WHERE key = 'hero_image'`),
+    pool.query(`SELECT id, partner_id, platform, label, url, icon FROM social_links ORDER BY created_at`)
   ]);
   res.json({
+    socialLinks: social.rows.map(r => ({ id: r.id, partnerId: r.partner_id || null, platform: r.platform, label: r.label, url: r.url, icon: r.icon || undefined })),
     hasAdmin: admins.rows.length > 0,
     partners: partners.rows.map(r => r.data),
     products: products.rows.map(r => r.data),
@@ -504,7 +506,7 @@ app.delete('/api/partners/:id', needAdmin, wrap(async (req, res) => {
   await pool.query(`DELETE FROM sessions WHERE user_id IN (SELECT id FROM users WHERE partner_id = $1)`, [id]);
   await pool.query(`DELETE FROM users WHERE partner_id = $1`, [id]);
   await pool.query(`DELETE FROM products WHERE partner_id = $1`, [id]);
-  await pool.query(`DELETE FROM partners WHERE id = $1`, [id]);
+  await pool.query(`DELETE FROM social_links WHERE partner_id = $1`, [id]);
   res.json({ success: true });
 }));
 
@@ -531,6 +533,57 @@ app.put('/api/hero', needAdmin, wrap(async (req, res) => {
     `INSERT INTO settings (key, value) VALUES ('hero_image', $1) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
     [image]
   );
+  res.json({ success: true });
+}));
+
+// ---------- social media links ----------
+const SOCIAL_PLATFORMS = ['facebook', 'instagram', 'x', 'tiktok', 'youtube', 'whatsapp', 'linkedin', 'pinterest', 'snapchat', 'telegram', 'other'];
+
+app.post('/api/social', wrap(async (req, res) => {
+  const b = req.body || {};
+  const partnerId = str(b.partnerId, 200) || null;
+  const allowed = partnerId ? canManagePartner(req.user, partnerId) : adminReady(req.user);
+  if (!allowed) return fail(res, 403, partnerId ? 'You can only add pages to your own boutique.' : 'Only the global admin can add site-wide pages.');
+  if (partnerId) {
+    const p = await pool.query(`SELECT 1 FROM partners WHERE id = $1`, [partnerId]);
+    if (!p.rows[0]) return fail(res, 404, 'Partner not found.');
+  }
+  const platform = str(b.platform, 20).toLowerCase();
+  if (!SOCIAL_PLATFORMS.includes(platform)) return fail(res, 400, 'Choose a social media platform.');
+  let url = str(b.url, 500);
+  if (url && !/^https?:\/\//i.test(url)) url = `https://${url}`;
+  try {
+    const u = new URL(url);
+    if (!['http:', 'https:'].includes(u.protocol) || !u.hostname.includes('.')) throw new Error('bad');
+  } catch {
+    return fail(res, 400, 'Enter a valid page link, e.g. https://instagram.com/yourpage');
+  }
+  const label = str(b.label, 60) || platform.charAt(0).toUpperCase() + platform.slice(1);
+  let icon = null;
+  if (b.icon) {
+    if (typeof b.icon !== 'string' || !/^data:image\/(png|jpeg|webp|gif);base64,/.test(b.icon) || b.icon.length > 300000) {
+      return fail(res, 400, 'Icon must be a PNG, JPG, WEBP or GIF image under 200 KB.');
+    }
+    icon = b.icon;
+  }
+  const count = partnerId
+    ? await pool.query(`SELECT id FROM social_links WHERE partner_id = $1`, [partnerId])
+    : await pool.query(`SELECT id FROM social_links WHERE partner_id IS NULL`);
+  if (count.rows.length >= 12) return fail(res, 400, 'You can add up to 12 social pages.');
+  const id = `soc-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`;
+  await pool.query(
+    `INSERT INTO social_links (id, partner_id, platform, label, url, icon) VALUES ($1, $2, $3, $4, $5, $6)`,
+    [id, partnerId, platform, label, url, icon]
+  );
+  res.json({ success: true, link: { id, partnerId, platform, label, url, icon: icon || undefined } });
+}));
+
+app.delete('/api/social/:id', wrap(async (req, res) => {
+  const { rows } = await pool.query(`SELECT partner_id FROM social_links WHERE id = $1`, [req.params.id]);
+  if (!rows[0]) return fail(res, 404, 'Not found.');
+  const pid = rows[0].partner_id;
+  if (!(pid ? canManagePartner(req.user, pid) : adminReady(req.user))) return fail(res, 403, 'Not allowed.');
+  await pool.query(`DELETE FROM social_links WHERE id = $1`, [req.params.id]);
   res.json({ success: true });
 }));
 

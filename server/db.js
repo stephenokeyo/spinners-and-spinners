@@ -52,6 +52,15 @@ CREATE TABLE IF NOT EXISTS videos (
   mime TEXT NOT NULL,
   data BYTEA NOT NULL
 );
+CREATE TABLE IF NOT EXISTS social_links (
+  id TEXT PRIMARY KEY,
+  partner_id TEXT,
+  platform TEXT NOT NULL,
+  label TEXT NOT NULL,
+  url TEXT NOT NULL,
+  icon TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 CREATE TABLE IF NOT EXISTS settings (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL

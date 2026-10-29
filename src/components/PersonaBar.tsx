@@ -1,6 +1,21 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { Key, LogIn, LogOut } from 'lucide-react';
+import { Key, LogIn, LogOut, Clock } from 'lucide-react';
+
+const LiveClock: React.FC = () => {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <span className="flex items-center gap-1.5 text-neutral-300 font-mono text-[11px] whitespace-nowrap" title={Intl.DateTimeFormat().resolvedOptions().timeZone}>
+      <Clock className="w-3.5 h-3.5 text-[#c5a059]" />
+      <span className="hidden sm:inline">{now.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })} ·</span>
+      <span>{now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+    </span>
+  );
+};
 
 export const PersonaBar: React.FC = () => {
   const { currentUser, logout, setIsLoginModalOpen } = useApp();
@@ -29,13 +44,16 @@ export const PersonaBar: React.FC = () => {
         </div>
 
         {signedIn ? (
-          <button
-            onClick={logout}
-            className="px-3 py-1 bg-white/5 hover:bg-white/10 text-white/80 border border-white/10 rounded text-[11px] font-medium flex items-center gap-1.5 transition-colors"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>Log out</span>
-          </button>
+          <div className="flex items-center gap-3">
+            <LiveClock />
+            <button
+              onClick={logout}
+              className="px-3 py-1 bg-white/5 hover:bg-white/10 text-white/80 border border-white/10 rounded text-[11px] font-medium flex items-center gap-1.5 transition-colors"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Log out</span>
+            </button>
+          </div>
         ) : (
           <button
             onClick={() => setIsLoginModalOpen(true)}

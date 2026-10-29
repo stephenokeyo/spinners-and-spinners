@@ -37,6 +37,15 @@ export interface NewProductInput {
 
 type AuthResult = { success: boolean; error?: string; needsCode?: boolean; channel?: string };
 
+export interface SocialLink {
+  id: string;
+  partnerId: string | null;
+  platform: string;
+  label: string;
+  url: string;
+  icon?: string;
+}
+
 interface AppContextType {
   currentUser: User;
   partners: Partner[];
@@ -62,8 +71,10 @@ interface AppContextType {
   markProductSold: (productId: string, quantity?: number) => Promise<void>;
   setProductStock: (productId: string, stock: number) => Promise<void>;
   siteHeroImage: string;
+  socialLinks: SocialLink[];
+  addSocialLink: (input: { partnerId: string | null; platform: string; label: string; url: string; icon?: string }) => Promise<AuthResult>;
+  deleteSocialLink: (id: string) => Promise<void>;
   setSiteHeroImage: (image: string) => Promise<AuthResult>;
-  
   // Navigation & View State
   currentView: 'catalog' | 'partner' | 'product' | 'dashboard' | 'orders' | 'security';
   selectedPartnerId: string | null;
@@ -144,6 +155,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [partners, setPartners] = useState<Partner[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [siteHeroImage, setSiteHeroImageState] = useState<string>(HERO_IMAGE);
+  const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
   const [files, setFiles] = useState<PartnerFile[]>(() => readStored<PartnerFile[]>('files', []));
   const [orders, setOrders] = useState<Order[]>(() => readStored<Order[]>('orders', []));
   const [chatThreads, setChatThreads] = useState<ChatThread[]>(() => readStored<ChatThread[]>('chats', []));
@@ -183,7 +195,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setPartners(r.partners);
       setProducts(r.products);
       setSiteHeroImageState(r.heroImage || HERO_IMAGE);
-      setMe(r.me);
+      setSocialLinks(r.socialLinks || []);(r.me);
       if (!r.me && getToken()) setToken(null);
     }
     setIsLoading(false);
@@ -570,6 +582,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return { success: r.success, error: r.error };
   };
 
+  const addSocialLink: AppContextType['addSocialLink'] = async input => {
+    const r = await api('POST', '/api/social', input);
+    if (r.success) setSocialLinks(prev => [...prev, r.link]);
+    return { success: r.success, error: r.error };
+  };
+
+  const deleteSocialLink = async (id: string) => {
+    const r = await api('DELETE', `/api/social/${encodeURIComponent(id)}`);
+    if (r.success) setSocialLinks(prev => prev.filter(l => l.id !== id));
+  };
+
   const updatePartnerFulfilment = async (
     partnerId: string,
     data: { address: string; deliveryAvailable: boolean; deliveryFee: number }
@@ -619,6 +642,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setProductStock,
         siteHeroImage,
         setSiteHeroImage,
+        socialLinks,
+        addSocialLink,
+        deleteSocialLink,
         files,
         orders,
         chatThreads,
