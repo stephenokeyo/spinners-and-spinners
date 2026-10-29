@@ -391,7 +391,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             senderId: 'system',
             senderName: `${partner.name} Concierge`,
             senderRole: 'partner',
-            content: `Welcome to the ${partner.name} bespoke spinner. Our artisan directors are available for sizing inquiries, fabric consultations, and private appointments.`,
+            content: `Welcome to the ${partner.name} Spinners&Spinners spinner. Our artisan directors are available for sizing inquiries, fabric consultations, and private appointments.`,
             timestamp: 'Just now',
             isSystemNotice: true
           }
@@ -438,9 +438,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const partner = partners.find(p => p.id === thread.partnerId);
         const replies = [
           `Thank you for your inquiry regarding this piece. We would be pleased to hand-prepare tailored swatches for you.`,
-          `Our master patternmaker has received your note. Each silhouette is hand-fitted with bespoke precision.`,
+          `Our master patternmaker has received your note. Each silhouette is hand-fitted with Spinners&Spinners precision.`,
           `We will gladly arrange white-glove direct courier delivery for this commission.`,
-          `Understood. We have logged your bespoke specifications with the Paris & Milan spinners.`
+          `Understood. We have logged your Spinners&Spinners specifications with the Paris & Milan spinners.`
         ];
         const randomReply = replies[Math.floor(Math.random() * replies.length)];
 

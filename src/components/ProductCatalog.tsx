@@ -283,7 +283,7 @@ export const ProductCatalog: React.FC = () => {
                   {/* Price and Primary Actions */}
                   <div className="pt-4 border-t border-white/10 flex items-center justify-between gap-3">
                     <div>
-                      <span className="text-[10px] uppercase tracking-wider text-neutral-400 block">Spinner Bespoke</span>
+                      <span className="text-[10px] uppercase tracking-wider text-neutral-400 block">Spinner Spinners&Spinners</span>
                       <span className="text-lg font-mono font-medium text-white tracking-tight">
                         {formatPrice(product)}
                       </span>

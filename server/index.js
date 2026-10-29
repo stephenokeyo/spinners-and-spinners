@@ -676,7 +676,7 @@ app.post('/api/products', wrap(async (req, res) => {
     description,
     details: [],
     materials: [],
-    sizes: ['Bespoke Custom Measurements'],
+    sizes: ['Spinners&Spinners Custom Measurements'],
     leadTime: 'On request',
     featured: false,
     stock,

@@ -613,7 +613,7 @@ export const PartnerDashboard: React.FC = () => {
                 <input
                   type="text"
                   required
-                  placeholder="e.g. MA-Bespoke-GoldWeft-Specs-v2.pdf"
+                  placeholder="e.g. MA-Spinners&Spinners-GoldWeft-Specs-v2.pdf"
                   value={newFileName}
                   onChange={e => setNewFileName(e.target.value)}
                   className="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-white focus:outline-none focus:border-[#c5a059]"

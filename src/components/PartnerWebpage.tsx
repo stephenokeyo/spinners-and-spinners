@@ -41,7 +41,7 @@ export const PartnerWebpage: React.FC = () => {
   const partnerProducts = products.filter(p => p.partnerId === partner.id && p.stock !== 0);
   const activeProduct = partnerProducts.find(p => p.id === selectedProductId) || partnerProducts[0];
 
-  const [selectedSize, setSelectedSize] = useState<string>(activeProduct?.sizes[0] || 'Standard Bespoke');
+  const [selectedSize, setSelectedSize] = useState<string>(activeProduct?.sizes[0] || 'Standard Spinners&Spinners');
   const [inlineMessage, setInlineMessage] = useState<string>('');
 
   // Find active chat thread between current user and this partner
@@ -199,7 +199,7 @@ export const PartnerWebpage: React.FC = () => {
           <div className="mb-6 flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-[#c5a059]">
               <Scissors className="w-4 h-4" />
-              <span>Selected Bespoke Piece from {partner.name}</span>
+              <span>Selected Spinners&Spinners Piece from {partner.name}</span>
             </div>
             <span className="text-xs text-neutral-400">
               Direct spinner order · Hand-cut to client specifications
@@ -262,7 +262,7 @@ export const PartnerWebpage: React.FC = () => {
                 <div>
                   <div className="flex items-center justify-between text-xs text-neutral-400 mb-1">
                     <span>{activeProduct.category}</span>
-                    <span className="text-[#c5a059] font-mono">Bespoke Couture</span>
+                    <span className="text-[#c5a059] font-mono">Spinners&Spinners Couture</span>
                   </div>
 
                   <h2 className="text-2xl sm:text-3xl font-editorial font-medium text-white">
@@ -273,7 +273,7 @@ export const PartnerWebpage: React.FC = () => {
                     <span className="text-2xl font-mono font-semibold text-white">
                       {formatPrice(activeProduct)}
                     </span>
-                    <span className="text-xs text-neutral-400">including bespoke fitting consultation</span>
+                    <span className="text-xs text-neutral-400">including Spinners&Spinners fitting consultation</span>
                   </div>
                 </div>
 
@@ -284,7 +284,7 @@ export const PartnerWebpage: React.FC = () => {
                 {/* Sizing Selection */}
                 <div>
                   <label className="block text-xs uppercase tracking-wider text-neutral-400 font-medium mb-2">
-                    Select Sizing or Bespoke Fitting:
+                    Select Sizing or Spinners&Spinners Fitting:
                   </label>
                   <div className="grid grid-cols-2 gap-2">
                     {activeProduct.sizes.map(size => (

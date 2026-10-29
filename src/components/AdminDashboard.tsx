@@ -234,7 +234,7 @@ export const AdminDashboard: React.FC = () => {
               <div className="p-5 rounded bg-neutral-950 border border-white/10 space-y-1">
                 <span className="text-[11px] uppercase tracking-wider text-neutral-400">Total Guild GMV</span>
                 <p className="text-2xl font-mono font-medium text-white">KSh {totalGMV.toLocaleString()}</p>
-                <span className="text-[10px] text-neutral-500">Across {orders.length} bespoke commissions</span>
+                <span className="text-[10px] text-neutral-500">Across {orders.length} Spinners&Spinners commissions</span>
               </div>
 
               <div className="p-5 rounded bg-neutral-950 border border-white/10 space-y-1">
@@ -400,7 +400,7 @@ export const AdminDashboard: React.FC = () => {
               <div className="flex items-center gap-2">
                 <Lock className="w-4 h-4 text-amber-400 shrink-0" />
                 <span>
-                  <strong>Admin Privacy Oversight Privilege:</strong> Competing partners are strictly locked out of client purchase threads. As Platform Admin, you possess universal oversight to inspect dialogues, verify trade compliance, and mediate bespoke commissions.
+                  <strong>Admin Privacy Oversight Privilege:</strong> Competing partners are strictly locked out of client purchase threads. As Platform Admin, you possess universal oversight to inspect dialogues, verify trade compliance, and mediate Spinners&Spinners Ltd commissions.
                 </span>
               </div>
             </div>
