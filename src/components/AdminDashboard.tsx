@@ -34,7 +34,7 @@ export const AdminDashboard: React.FC = () => {
   } = useApp();
   const [bannerMsg, setBannerMsg] = useState('');
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'partners' | 'communications' | 'files' | 'orders'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'partners' | 'communications' | 'files' | 'orders' | 'admins'>('overview');
   const [managedPartnerId, setManagedPartnerId] = useState<string | null>(null);
   const emptyForm = {
     name: '', location: '', tagline: '', ethos: '', specialty: '', story: '', bannerText: '',
@@ -595,8 +595,12 @@ export const AdminDashboard: React.FC = () => {
             ))}
           </div>
         )}
-        <AdminsManager />
-        <SocialLinksManager partnerId={null} title="Site-wide social media pages" />
+        {activeTab === 'admins' && (
+          <div>
+            <AdminsManager />
+            <SocialLinksManager partnerId={null} title="Site-wide social media pages" />
+          </div>
+        )}
       </div>
     </div>
   );

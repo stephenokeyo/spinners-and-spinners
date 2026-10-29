@@ -24,10 +24,11 @@ export const PersonaBar: React.FC = () => {
   return (
     <div className="bg-[#121417] border-b border-white/10 px-4 py-2 text-xs">
       <div className="w-full flex flex-wrap items-center justify-between gap-3">
+        {signedIn ? (
         <div className="flex items-center gap-2">
           <span className="text-[#a1a1aa] uppercase tracking-wider text-[11px] font-medium flex items-center gap-1.5">
             <Key className="w-3.5 h-3.5 text-[#c5a059]" />
-            {signedIn ? 'Signed in:' : 'Browsing as:'}
+            Signed in:
           </span>
           <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded px-2 py-1">
             <span className="w-5 h-5 rounded-full bg-[#c5a059]/20 text-[#c5a059] flex items-center justify-center font-bold text-[10px]">
@@ -42,6 +43,9 @@ export const PersonaBar: React.FC = () => {
             </span>
           </div>
         </div>
+        ) : (
+          <span className="text-[#a1a1aa] text-[11px] tracking-wide">Welcome to Spinners&Spinners</span>
+        )}
 
         {signedIn ? (
           <div className="flex items-center gap-3">
