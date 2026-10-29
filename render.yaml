@@ -1,9 +1,3 @@
-databases:
-  - name: spinners-db
-    plan: free
-    databaseName: spinners
-    user: spinners
-
 services:
   - type: web
     name: spinners-app
@@ -14,6 +8,4 @@ services:
     healthCheckPath: /api/bootstrap
     envVars:
       - key: DATABASE_URL
-        fromDatabase:
-          name: spinners-db
-          property: connectionString
+        sync: false
