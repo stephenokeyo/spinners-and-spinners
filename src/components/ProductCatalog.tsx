@@ -76,7 +76,7 @@ export const ProductCatalog: React.FC = () => {
               
               <div className="absolute bottom-4 left-5 right-5 flex items-end justify-between">
                 <div>
-                  <span className="text-[10px] uppercase tracking-widest text-[#c5a059]">Autumn / Winter Bespoke Guild</span>
+                  <span className="text-[10px] uppercase tracking-widest text-[#c5a059]">Spinners&amp;Spinners Partner Houses</span>
                   <p className="text-sm font-editorial text-white">{partners.length} Partner {partners.length === 1 ? 'House' : 'Houses'}</p>
                 </div>
                 <span className="text-xs text-white/70 font-mono tracking-wider uppercase">
