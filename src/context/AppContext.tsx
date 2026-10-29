@@ -1,9 +1,9 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { User, Partner, Product, PartnerFile, ChatThread, ChatMessage, Order, UserRole } from '../types';
 import { HERO_IMAGE } from '../data/mockData';
-import { deleteVideo } from '../utils/videoStore';
+import { api, getToken, setToken } from '../utils/api';
+import { isValidEmail, MIN_PASSWORD_LENGTH } from '../utils/auth';
 import { isValidWhatsApp, isValidKraPin } from '../utils/helpers';
-import { generateSalt, hashPassword, isValidEmail, MIN_PASSWORD_LENGTH } from '../utils/auth';
 
 export interface NewPartnerInput {
   name: string;
@@ -36,11 +36,9 @@ export interface NewProductInput {
 }
 
 type AuthResult = { success: boolean; error?: string };
-type Credentials = Record<string, { salt: string; hash: string }>;
 
 interface AppContextType {
   currentUser: User;
-  allUsers: User[];
   partners: Partner[];
   products: Product[];
   files: PartnerFile[];
@@ -52,17 +50,19 @@ interface AppContextType {
   setupAdmin: (name: string, email: string, password: string) => Promise<AuthResult>;
   login: (email: string, password: string) => Promise<AuthResult>;
   logout: () => void;
+  isLoading: boolean;
 
   // Partner & Product management
   addPartner: (input: NewPartnerInput) => Promise<AuthResult & { partner?: Partner }>;
   resetPartnerPassword: (partnerId: string, newPassword: string) => Promise<AuthResult>;
-  deletePartner: (partnerId: string) => void;
-  addProduct: (partnerId: string, input: NewProductInput) => { success: boolean; error?: string };
-  deleteProduct: (productId: string) => void;
-  markProductSold: (productId: string, quantity?: number) => void;
-  setProductStock: (productId: string, stock: number) => void;
+  deletePartner: (partnerId: string) => Promise<void>;
+  addProduct: (partnerId: string, input: NewProductInput) => Promise<AuthResult>;
+  uploadVideo: (file: File) => Promise<AuthResult & { videoId?: string }>;
+  deleteProduct: (productId: string) => Promise<void>;
+  markProductSold: (productId: string, quantity?: number) => Promise<void>;
+  setProductStock: (productId: string, stock: number) => Promise<void>;
   siteHeroImage: string;
-  setSiteHeroImage: (image: string) => AuthResult;
+  setSiteHeroImage: (image: string) => Promise<AuthResult>;
   
   // Navigation & View State
   currentView: 'catalog' | 'partner' | 'product' | 'dashboard' | 'orders' | 'security';
@@ -102,7 +102,7 @@ interface AppContextType {
   updatePartnerFulfilment: (
     partnerId: string,
     data: { address: string; deliveryAvailable: boolean; deliveryFee: number }
-  ) => AuthResult;
+  ) => Promise<AuthResult>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -138,18 +138,17 @@ const getGuestUser = (): User => {
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [guestUser] = useState<User>(getGuestUser);
-  const [sessionUserId, setSessionUserId] = useState<string | null>(() => readStored<string | null>('session', null));
-  const [allUsers, setAllUsers] = useState<User[]>(() => readStored<User[]>('users', []));
-  const [credentials, setCredentials] = useState<Credentials>(() => readStored<Credentials>('credentials', {}));
-  const [partners, setPartners] = useState<Partner[]>(() => readStored<Partner[]>('partners', []));
-  const [products, setProducts] = useState<Product[]>(() => readStored<Product[]>('products', []));
-  const [siteHeroImage, setSiteHeroImageState] = useState<string>(() => readStored<string>('site_hero', HERO_IMAGE));
+  const [me, setMe] = useState<User | null>(null);
+  const [hasAdmin, setHasAdmin] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [partners, setPartners] = useState<Partner[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [siteHeroImage, setSiteHeroImageState] = useState<string>(HERO_IMAGE);
   const [files, setFiles] = useState<PartnerFile[]>(() => readStored<PartnerFile[]>('files', []));
   const [orders, setOrders] = useState<Order[]>(() => readStored<Order[]>('orders', []));
   const [chatThreads, setChatThreads] = useState<ChatThread[]>(() => readStored<ChatThread[]>('chats', []));
 
-  const currentUser: User = allUsers.find(u => u.id === sessionUserId) || guestUser;
-  const hasAdmin = allUsers.some(u => u.role === 'admin');
+  const currentUser: User = me || guestUser;
 
   // Navigation State
   const [currentView, setCurrentView] = useState<'catalog' | 'partner' | 'product' | 'dashboard' | 'orders' | 'security'>('catalog');
@@ -168,28 +167,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Sync to localStorage (and drop the old demo-data keys from earlier versions)
   useEffect(() => {
     Object.keys(localStorage)
-      .filter(k => k.startsWith('atelier_'))
+      .filter(k => k.startsWith('atelier_') || ['atelier2_users', 'atelier2_credentials', 'atelier2_partners', 'atelier2_products', 'atelier2_session', 'atelier2_site_hero'].includes(k))
       .forEach(k => localStorage.removeItem(k));
   }, []);
 
-  useEffect(() => { persist('session', sessionUserId); }, [sessionUserId]);
-  useEffect(() => { persist('users', allUsers); }, [allUsers]);
-  useEffect(() => { persist('credentials', credentials); }, [credentials]);
-  useEffect(() => { persist('partners', partners); }, [partners]);
-  useEffect(() => { persist('products', products); }, [products]);
-  useEffect(() => { persist('site_hero', siteHeroImage); }, [siteHeroImage]);
   useEffect(() => { persist('files', files); }, [files]);
   useEffect(() => { persist('orders', orders); }, [orders]);
   useEffect(() => { persist('chats', chatThreads); }, [chatThreads]);
 
-  const createCredential = async (userId: string, password: string) => {
-    const salt = generateSalt();
-    const hash = await hashPassword(password, salt);
-    setCredentials(prev => ({ ...prev, [userId]: { salt, hash } }));
-  };
+  // Partners, products, accounts and the banner live in the shared database; this pulls the latest copy.
+  const refresh = useCallback(async () => {
+    const r = await api('GET', '/api/bootstrap');
+    if (r.success) {
+      setHasAdmin(r.hasAdmin);
+      setPartners(r.partners);
+      setProducts(r.products);
+      setSiteHeroImageState(r.heroImage || HERO_IMAGE);
+      setMe(r.me);
+      if (!r.me && getToken()) setToken(null);
+    }
+    setIsLoading(false);
+  }, []);
 
-  const startSession = (user: User) => {
-    setSessionUserId(user.id);
+  useEffect(() => {
+    void refresh();
+    const timer = setInterval(() => { if (!document.hidden) void refresh(); }, 30000);
+    return () => clearInterval(timer);
+  }, [refresh]);
+
+  const startSession = (user: User, token: string) => {
+    setToken(token);
+    setMe(user);
+    setHasAdmin(true);
     setIsLoginModalOpen(false);
     if (user.role === 'partner' && user.partnerId) {
       setSelectedPartnerId(user.partnerId);
@@ -198,6 +207,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
     setCurrentView('dashboard');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    void refresh();
   };
 
   const setupAdmin = async (name: string, email: string, password: string): Promise<AuthResult> => {
@@ -205,41 +215,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!name.trim()) return { success: false, error: 'Name is required.' };
     if (!isValidEmail(email)) return { success: false, error: 'Enter a valid email address.' };
     if (password.length < MIN_PASSWORD_LENGTH) return { success: false, error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters.` };
-    try {
-      const admin: User = {
-        id: `user-admin-${Date.now()}`,
-        name: name.trim(),
-        email: email.trim().toLowerCase(),
-        role: 'admin',
-        avatar: name.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase(),
-        title: 'Global Platform Admin'
-      };
-      await createCredential(admin.id, password);
-      setAllUsers(prev => [...prev, admin]);
-      startSession(admin);
-      return { success: true };
-    } catch (e) {
-      return { success: false, error: (e as Error).message };
-    }
+    const r = await api('POST', '/api/setup-admin', { name: name.trim(), email: email.trim(), password });
+    if (!r.success) return { success: false, error: r.error };
+    startSession(r.user, r.token);
+    return { success: true };
   };
 
   const login = async (email: string, password: string): Promise<AuthResult> => {
-    const invalid = { success: false, error: 'Invalid email or password.' };
-    const user = allUsers.find(u => u.email.toLowerCase() === email.trim().toLowerCase());
-    const cred = user && credentials[user.id];
-    if (!user || !cred) return invalid;
-    try {
-      const hash = await hashPassword(password, cred.salt);
-      if (hash !== cred.hash) return invalid;
-    } catch (e) {
-      return { success: false, error: (e as Error).message };
-    }
-    startSession(user);
+    const r = await api('POST', '/api/login', { email: email.trim(), password });
+    if (!r.success) return { success: false, error: r.error };
+    startSession(r.user, r.token);
     return { success: true };
   };
 
   const logout = () => {
-    setSessionUserId(null);
+    void api('POST', '/api/logout');
+    setToken(null);
+    setMe(null);
     setSelectedPartnerId(null);
     setCurrentView('catalog');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -265,82 +257,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (input.password.length < MIN_PASSWORD_LENGTH) {
       return { success: false, error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters.` };
     }
-    if (allUsers.some(u => u.email.toLowerCase() === email)) return { success: false, error: 'This login email is already in use.' };
-    if (partners.some(p => p.name.toLowerCase() === name.toLowerCase())) {
-      return { success: false, error: 'A partner with this name already exists.' };
-    }
-
-    const slug = name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'partner';
-    const id = partners.some(p => p.id === slug) ? `${slug}-${Date.now()}` : slug;
-    const leadDesigner = input.leadDesigner.trim();
-
-    const partner: Partner = {
-      id,
-      name,
-      location: input.location.trim(),
-      tagline: input.tagline.trim(),
-      ethos: input.ethos.trim(),
-      accentColor: '#c5a059',
-      heroImage: input.heroImage || HERO_IMAGE,
-      founded: input.founded || new Date().getFullYear(),
-      leadDesigner,
-      specialty: input.specialty.trim(),
-      story: input.story.trim(),
-      bannerText: input.bannerText.trim(),
-      whatsapp: input.whatsapp.trim(),
-      kraPin: input.kraPin.trim().toUpperCase(),
-      address: input.address.trim(),
-      deliveryAvailable: input.deliveryAvailable,
-      deliveryFee: input.deliveryAvailable ? Math.round(input.deliveryFee) : 0
-    };
-
-    const director: User = {
-      id: `user-partner-${id}`,
-      name: leadDesigner,
-      email,
-      role: 'partner',
-      partnerId: id,
-      partnerName: name,
-      avatar: leadDesigner.split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase(),
-      title: `Partner Admin (${name})`
-    };
-
-    try {
-      await createCredential(director.id, input.password);
-    } catch (e) {
-      return { success: false, error: (e as Error).message };
-    }
-    setPartners(prev => [...prev, partner]);
-    setAllUsers(prev => [...prev, director]);
-    return { success: true, partner };
+    const r = await api('POST', '/api/partners', { ...input, name, email });
+    if (!r.success) return { success: false, error: r.error };
+    setPartners(prev => [...prev, r.partner]);
+    return { success: true, partner: r.partner };
   };
 
   const resetPartnerPassword = async (partnerId: string, newPassword: string): Promise<AuthResult> => {
     if (currentUser.role !== 'admin') return { success: false, error: 'Only the global admin can reset passwords.' };
     if (newPassword.length < MIN_PASSWORD_LENGTH) return { success: false, error: `Password must be at least ${MIN_PASSWORD_LENGTH} characters.` };
-    const user = allUsers.find(u => u.partnerId === partnerId);
-    if (!user) return { success: false, error: 'Partner login not found.' };
-    try {
-      await createCredential(user.id, newPassword);
-      return { success: true };
-    } catch (e) {
-      return { success: false, error: (e as Error).message };
-    }
+    const r = await api('POST', `/api/partners/${encodeURIComponent(partnerId)}/password`, { password: newPassword });
+    return { success: r.success, error: r.error };
   };
 
-  const deletePartner = (partnerId: string) => {
+  const deletePartner = async (partnerId: string) => {
     if (currentUser.role !== 'admin') return;
-    const removedUserIds = allUsers.filter(u => u.partnerId === partnerId).map(u => u.id);
-    setPartners(prev => prev.filter(p => p.id !== partnerId));
-    setProducts(prev => prev.filter(p => p.partnerId !== partnerId));
+    const r = await api('DELETE', `/api/partners/${encodeURIComponent(partnerId)}`);
+    if (!r.success) return;
     setFiles(prev => prev.filter(f => f.partnerId !== partnerId));
-    setAllUsers(prev => prev.filter(u => u.partnerId !== partnerId));
-    setCredentials(prev => {
-      const next = { ...prev };
-      removedUserIds.forEach(id => delete next[id]);
-      return next;
-    });
     if (selectedPartnerId === partnerId) setSelectedPartnerId(null);
+    await refresh();
   };
   const navigateTo = (view: 'catalog' | 'partner' | 'product' | 'dashboard' | 'orders' | 'security', partnerId?: string, productId?: string) => {
     setCurrentView(view);
@@ -607,84 +543,53 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return { success: true, orderId };
   };
 
-  const addProduct = (partnerId: string, input: NewProductInput) => {
-    const partner = partners.find(p => p.id === partnerId);
-    if (!partner) return { success: false, error: 'Partner not found.' };
-    const allowed = currentUser.role === 'admin' || (currentUser.role === 'partner' && currentUser.partnerId === partnerId);
-    if (!allowed) return { success: false, error: 'You can only upload products to your own section.' };
+  const addProduct = async (partnerId: string, input: NewProductInput): Promise<AuthResult> => {
     if (!input.title.trim() || !input.description.trim()) return { success: false, error: 'Item name and description are required.' };
     if (!input.image) return { success: false, error: 'Please upload a photo.' };
     if (!Number.isInteger(input.stock) || input.stock < 1) return { success: false, error: 'Quantity must be a whole number of at least 1.' };
-
-    const product: Product = {
-      id: `prod-${partnerId}-${Date.now()}`,
-      partnerId,
-      partnerName: partner.name,
-      title: input.title.trim(),
-      category: (() => {
-        const typed = (input.category ?? '').trim().replace(/\s+/g, ' ') || 'General';
-        return products.find(p => p.category.toLowerCase() === typed.toLowerCase())?.category ?? typed;
-      })(),
-      price: input.price && input.price > 0 ? input.price : 0,
-      currency: 'KES',
-      image: input.image,
-      description: input.description.trim(),
-      details: [],
-      materials: [],
-      sizes: ['Bespoke Custom Measurements'],
-      leadTime: 'On request',
-      featured: false,
-      stock: input.stock,
-      videoId: input.videoId
-    };
-    setProducts(prev => [product, ...prev]);
+    const r = await api('POST', '/api/products', { ...input, partnerId });
+    if (!r.success) return { success: false, error: r.error };
+    setProducts(prev => [r.product, ...prev]);
     return { success: true };
   };
 
-  const deleteProduct = (productId: string) => {
-    const product = products.find(p => p.id === productId);
-    if (!product) return;
-    const allowed = currentUser.role === 'admin' || (currentUser.role === 'partner' && currentUser.partnerId === product.partnerId);
-    if (allowed) {
-      setProducts(prev => prev.filter(p => p.id !== productId));
-      if (product.videoId) void deleteVideo(product.videoId);
-    }
+  const uploadVideo = async (file: File): Promise<AuthResult & { videoId?: string }> => {
+    const r = await api('POST', '/api/videos', undefined, { blob: file, type: file.type || 'video/mp4' });
+    return { success: r.success, error: r.error, videoId: r.videoId };
   };
 
-  const setSiteHeroImage = (image: string): AuthResult => {
+  const deleteProduct = async (productId: string) => {
+    const r = await api('DELETE', `/api/products/${encodeURIComponent(productId)}`);
+    if (r.success) setProducts(prev => prev.filter(p => p.id !== productId));
+  };
+
+  const setSiteHeroImage = async (image: string): Promise<AuthResult> => {
     if (currentUser.role !== 'admin') return { success: false, error: 'Only the global admin can change this image.' };
-    setSiteHeroImageState(image || HERO_IMAGE);
-    return { success: true };
+    const r = await api('PUT', '/api/hero', { image: image || null });
+    if (r.success) setSiteHeroImageState(image || HERO_IMAGE);
+    return { success: r.success, error: r.error };
   };
 
-  const updatePartnerFulfilment = (
+  const updatePartnerFulfilment = async (
     partnerId: string,
     data: { address: string; deliveryAvailable: boolean; deliveryFee: number }
-  ): AuthResult => {
-    const allowed = currentUser.role === 'admin' || (currentUser.role === 'partner' && currentUser.partnerId === partnerId);
-    if (!allowed) return { success: false, error: 'Not allowed.' };
+  ): Promise<AuthResult> => {
     if (!data.address.trim()) return { success: false, error: 'Business location / address is required.' };
     if (data.deliveryAvailable && !(data.deliveryFee >= 0)) return { success: false, error: 'Enter a valid delivery charge.' };
-    setPartners(prev => prev.map(p => p.id === partnerId
-      ? { ...p, address: data.address.trim(), deliveryAvailable: data.deliveryAvailable, deliveryFee: data.deliveryAvailable ? Math.round(data.deliveryFee) : 0 }
-      : p));
-    return { success: true };
+    const r = await api('PATCH', `/api/partners/${encodeURIComponent(partnerId)}/fulfilment`, data);
+    if (r.success) setPartners(prev => prev.map(p => (p.id === partnerId ? r.partner : p)));
+    return { success: r.success, error: r.error };
   };
 
-  const canManage = (product: Product) =>
-    currentUser.role === 'admin' || (currentUser.role === 'partner' && currentUser.partnerId === product.partnerId);
-
-  const markProductSold = (productId: string, quantity = 1) => {
-    setProducts(prev => prev.map(p =>
-      p.id === productId && canManage(p) && p.stock !== undefined
-        ? { ...p, stock: Math.max(0, p.stock - quantity) }
-        : p
-    ));
+  const markProductSold = async (productId: string, quantity = 1) => {
+    const r = await api('POST', `/api/products/${encodeURIComponent(productId)}/sold`, { quantity });
+    if (r.success) setProducts(prev => prev.map(p => (p.id === productId ? r.product : p)));
   };
 
-  const setProductStock = (productId: string, stock: number) => {
+  const setProductStock = async (productId: string, stock: number) => {
     if (!Number.isInteger(stock) || stock < 0) return;
-    setProducts(prev => prev.map(p => (p.id === productId && canManage(p) ? { ...p, stock } : p)));
+    const r = await api('PATCH', `/api/products/${encodeURIComponent(productId)}/stock`, { stock });
+    if (r.success) setProducts(prev => prev.map(p => (p.id === productId ? r.product : p)));
   };
 
   const updateOrderStatus = (orderId: string, status: Order['status']) => {
@@ -697,7 +602,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     <AppContext.Provider
       value={{
         currentUser,
-        allUsers,
+        isLoading,
+        uploadVideo,
         hasAdmin,
         setupAdmin,
         login,

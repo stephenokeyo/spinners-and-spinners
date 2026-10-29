@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { Product } from '../types';
 import { fileToCompressedDataUrl, formatPrice } from '../utils/helpers';
-import { MAX_VIDEO_MB, saveVideo, deleteVideo } from '../utils/videoStore';
+import { MAX_VIDEO_MB } from '../utils/api';
 import { VideoButton } from './VideoButton';
 import { ImagePlus, Trash2, CheckCircle, AlertTriangle, Video, X } from 'lucide-react';
 import { FulfilmentSettings } from './FulfilmentSettings';
 
 
 export const ProductManager: React.FC<{ partnerId: string }> = ({ partnerId }) => {
-  const { products, partners, addProduct, deleteProduct, markProductSold, setProductStock } = useApp();
+  const { products, partners, addProduct, uploadVideo, deleteProduct, markProductSold, setProductStock } = useApp();
   const partner = partners.find(p => p.id === partnerId);
   const partnerProducts = products.filter(p => p.partnerId === partnerId);
 
@@ -48,14 +48,11 @@ export const ProductManager: React.FC<{ partnerId: string }> = ({ partnerId }) =
     e.preventDefault();
     let videoId: string | undefined;
     if (video) {
-      videoId = `vid-${crypto.randomUUID()}`;
-      try {
-        await saveVideo(videoId, video);
-      } catch {
-        return setFeedback({ ok: false, msg: 'Could not save the video on this device.' });
-      }
+      const up = await uploadVideo(video);
+      if (!up.success) return setFeedback({ ok: false, msg: up.error || 'Could not upload the video.' });
+      videoId = up.videoId;
     }
-    const result = addProduct(partnerId, {
+    const result = await addProduct(partnerId, {
       title,
       description,
       image,
@@ -73,7 +70,6 @@ export const ProductManager: React.FC<{ partnerId: string }> = ({ partnerId }) =
       setImage('');
       setFeedback({ ok: true, msg: 'Product published. It is now live in the global catalog.' });
     } else {
-      if (videoId) void deleteVideo(videoId);
       setFeedback({ ok: false, msg: result.error || 'Could not publish product.' });
     }
   };

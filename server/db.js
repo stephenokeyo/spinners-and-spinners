@@ -1,0 +1,60 @@
+import pg from 'pg';
+
+const SCHEMA = `
+CREATE TABLE IF NOT EXISTS users (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  email TEXT NOT NULL UNIQUE,
+  role TEXT NOT NULL,
+  partner_id TEXT,
+  avatar TEXT,
+  title TEXT,
+  salt TEXT NOT NULL,
+  hash TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS sessions (
+  token_hash TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  expires_at TIMESTAMPTZ NOT NULL
+);
+CREATE TABLE IF NOT EXISTS partners (
+  id TEXT PRIMARY KEY,
+  data JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS products (
+  id TEXT PRIMARY KEY,
+  partner_id TEXT NOT NULL,
+  data JSONB NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS videos (
+  id TEXT PRIMARY KEY,
+  owner_id TEXT NOT NULL,
+  mime TEXT NOT NULL,
+  data BYTEA NOT NULL
+);
+CREATE TABLE IF NOT EXISTS settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+`;
+
+export const createPool = async () => {
+  let pool;
+  if (process.env.DATABASE_URL) {
+    pool = new pg.Pool({
+      connectionString: process.env.DATABASE_URL,
+      ssl: process.env.DATABASE_SSL === 'false' ? false : { rejectUnauthorized: false }
+    });
+  } else {
+    // Local development only: in-memory database, data is lost on restart.
+    const { newDb } = await import('pg-mem');
+    const mem = newDb();
+    const adapter = mem.adapters.createPg();
+    pool = new adapter.Pool();
+    console.warn('DATABASE_URL not set: using a temporary in-memory database.');
+  }
+  for (const stmt of SCHEMA.split(';').map(s => s.trim()).filter(Boolean)) await pool.query(stmt);
+  return pool;
+};

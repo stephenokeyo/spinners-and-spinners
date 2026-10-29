@@ -12,9 +12,9 @@ export const FulfilmentSettings: React.FC<{ partnerId: string }> = ({ partnerId 
   if (!partner) return null;
   const cls = 'w-full bg-neutral-900 border border-white/10 rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-[#c5a059]';
 
-  const save = (e: React.FormEvent) => {
+  const save = async (e: React.FormEvent) => {
     e.preventDefault();
-    const r = updatePartnerFulfilment(partnerId, { address, deliveryAvailable: delivery, deliveryFee: Number(fee) });
+    const r = await updatePartnerFulfilment(partnerId, { address, deliveryAvailable: delivery, deliveryFee: Number(fee) });
     setMsg({ ok: r.success, text: r.success ? 'Saved.' : r.error || 'Could not save.' });
   };
 

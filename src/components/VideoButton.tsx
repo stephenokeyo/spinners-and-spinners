@@ -1,31 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Play, X } from 'lucide-react';
-import { getVideo } from '../utils/videoStore';
+import { videoUrl } from '../utils/api';
 
 export const VideoButton: React.FC<{ videoId?: string; title: string; className?: string }> = ({ videoId, title, className = '' }) => {
   const [open, setOpen] = useState(false);
-  const [url, setUrl] = useState<string | null>(null);
   const [missing, setMissing] = useState(false);
-
-  useEffect(() => {
-    if (!open || !videoId) return;
-    let objectUrl: string | null = null;
-    let cancelled = false;
-    getVideo(videoId)
-      .then(blob => {
-        if (cancelled) return;
-        if (!blob) return setMissing(true);
-        objectUrl = URL.createObjectURL(blob);
-        setUrl(objectUrl);
-      })
-      .catch(() => !cancelled && setMissing(true));
-    return () => {
-      cancelled = true;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-      setUrl(null);
-      setMissing(false);
-    };
-  }, [open, videoId]);
 
   if (!videoId) return null;
 
@@ -48,12 +27,10 @@ export const VideoButton: React.FC<{ videoId?: string; title: string; className?
               <X className="w-4 h-4" />
             </button>
             <p className="text-xs text-neutral-300 mb-2">{title}</p>
-            {url ? (
-              <video src={url} controls autoPlay playsInline className="w-full max-h-[70vh] bg-black rounded" />
+            {missing ? (
+              <p className="text-xs text-neutral-500 py-10 text-center">This video is not available.</p>
             ) : (
-              <p className="text-xs text-neutral-500 py-10 text-center">
-                {missing ? 'This video is not available on this device.' : 'Loading video…'}
-              </p>
+              <video src={videoUrl(videoId)} controls autoPlay playsInline onError={() => setMissing(true)} className="w-full max-h-[70vh] bg-black rounded" />
             )}
           </div>
         </div>

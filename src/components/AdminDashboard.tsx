@@ -89,7 +89,7 @@ export const AdminDashboard: React.FC = () => {
 
   const handleDeletePartner = (partnerId: string, name: string) => {
     if (window.confirm(`Delete ${name}? This removes their login, products, files, orders and chats.`)) {
-      deletePartner(partnerId);
+      void deletePartner(partnerId);
     }
   };
 
@@ -206,8 +206,8 @@ export const AdminDashboard: React.FC = () => {
                       e.target.value = '';
                       if (!file) return;
                       try {
-                        setSiteHeroImage(await fileToCompressedDataUrl(file, 1600));
-                        setBannerMsg('Banner updated.');
+                        const r = await setSiteHeroImage(await fileToCompressedDataUrl(file, 1600));
+                        setBannerMsg(r.success ? 'Banner updated.' : r.error || 'Could not update banner.');
                       } catch (err) {
                         setBannerMsg((err as Error).message);
                       }
