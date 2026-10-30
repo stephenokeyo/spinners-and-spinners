@@ -5,13 +5,10 @@ import fs from 'node:fs';
 import express from 'express';
 import { createPool } from './db.js';
 import nodemailer from 'nodemailer';
-import { spawn } from 'node:child_process';
-import os from 'node:os';
-import ffmpegPath from 'ffmpeg-static';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const MAX_VIDEO_BYTES = 50 * 1024 * 1024;
-const MAX_ADMIN_VIDEO_BYTES = 200 * 1024 * 1024;
+const MAX_ADMIN_VIDEO_BYTES = 80 * 1024 * 1024;
 const MIN_PASSWORD = 8;
 const SESSION_DAYS = 30;
 
@@ -772,84 +769,41 @@ app.post('/api/videos', express.raw({ type: 'video/*', limit: MAX_ADMIN_VIDEO_BY
   if (req.user.role !== 'admin' && req.body.length > MAX_VIDEO_BYTES) return fail(res, 413, 'Video must be under 50 MB.');
   const id = `vid-${crypto.randomUUID()}`;
   const mime = String(req.headers['content-type']).split(';')[0];
-  const needsConvert = !BROWSER_SAFE_MIME.has(mime) || req.body.includes('hvc1') || req.body.includes('hev1');
-  await pool.query(`INSERT INTO videos (id, owner_id, mime, data) VALUES ($1, $2, $3, $4)`, [
-    id,
-    req.user.id,
-    needsConvert && ffmpegPath ? `pending:${mime}` : mime,
-    req.body
-  ]);
-  if (needsConvert && ffmpegPath) queueConvert(id);
+  await pool.query(`INSERT INTO videos (id, owner_id, mime, data) VALUES ($1, $2, $3, $4)`, [id, req.user.id, mime, req.body]);
   res.json({ success: true, videoId: id });
 }));
 
-// Phone videos (.mov / HEVC) won't play in most browsers, so they are converted to H.264 MP4 in the background.
-const BROWSER_SAFE_MIME = new Set(['video/mp4', 'video/webm']);
-const convertQueue = [];
-let converting = false;
-const queueConvert = id => {
-  convertQueue.push(id);
-  void runConvertQueue();
-};
-const runFfmpeg = (input, output) =>
-  new Promise((resolve, reject) => {
-    const p = spawn(
-      ffmpegPath,
-      ['-y', '-i', input, '-vf', "scale='min(1280,iw)':-2", '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '26',
-        '-pix_fmt', 'yuv420p', '-threads', '1', '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', output],
-      { stdio: 'ignore' }
-    );
-    p.on('error', reject);
-    p.on('close', code => (code === 0 ? resolve() : reject(new Error(`ffmpeg exited with ${code}`))));
-  });
-async function runConvertQueue() {
-  if (converting) return;
-  converting = true;
-  while (convertQueue.length) {
-    const id = convertQueue.shift();
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'vid-'));
-    try {
-      const { rows } = await pool.query(`SELECT mime, data FROM videos WHERE id = $1`, [id]);
-      if (!rows[0]) continue;
-      const input = path.join(dir, 'in');
-      const output = path.join(dir, 'out.mp4');
-      fs.writeFileSync(input, rows[0].data);
-      await runFfmpeg(input, output);
-      await pool.query(`UPDATE videos SET mime = 'video/mp4', data = $2 WHERE id = $1`, [id, fs.readFileSync(output)]);
-      console.log(`[VIDEO] converted ${id}`);
-    } catch (e) {
-      console.error(`[VIDEO] conversion failed for ${id}:`, e.message);
-      await pool.query(`UPDATE videos SET mime = replace(mime, 'pending:', '') WHERE id = $1`, [id]).catch(() => undefined);
-    } finally {
-      fs.rmSync(dir, { recursive: true, force: true });
-    }
-  }
-  converting = false;
-}
+const VIDEO_CHUNK = 4 * 1024 * 1024;
 
+// Only the requested slice is read from the database, so big videos don't exhaust memory.
 app.get('/api/videos/:id', wrap(async (req, res) => {
-  const { rows } = await pool.query(`SELECT mime, data FROM videos WHERE id = $1`, [req.params.id]);
-  if (!rows[0]) return res.status(404).end();
-  const { mime, data } = rows[0];
-  if (mime.startsWith('pending:')) return res.status(425).end();
+  const meta = await pool.query(`SELECT mime, octet_length(data) AS size FROM videos WHERE id = $1`, [req.params.id]);
+  if (!meta.rows[0]) return res.status(404).end();
+  const mime = meta.rows[0].mime.replace(/^pending:/, '');
+  const size = Number(meta.rows[0].size);
   res.setHeader('Content-Type', mime);
   res.setHeader('Accept-Ranges', 'bytes');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   const range = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range || '');
-  if (range) {
-    const start = range[1] ? parseInt(range[1], 10) : 0;
-    const end = range[2] ? Math.min(parseInt(range[2], 10), data.length - 1) : data.length - 1;
-    if (start > end || start >= data.length) {
-      res.setHeader('Content-Range', `bytes */${data.length}`);
-      return res.status(416).end();
-    }
-    res.status(206);
-    res.setHeader('Content-Range', `bytes ${start}-${end}/${data.length}`);
-    res.setHeader('Content-Length', end - start + 1);
-    return res.end(data.subarray(start, end + 1));
+  const start = range && range[1] ? parseInt(range[1], 10) : 0;
+  let end = range && range[2] ? Math.min(parseInt(range[2], 10), size - 1) : size - 1;
+  if (!range) end = Math.min(end, VIDEO_CHUNK - 1);
+  else end = Math.min(end, start + VIDEO_CHUNK - 1);
+  if (start > end || start >= size) {
+    res.setHeader('Content-Range', `bytes */${size}`);
+    return res.status(416).end();
   }
-  res.setHeader('Content-Length', data.length);
-  res.end(data);
+  const part = await pool.query(`SELECT substring(data from $2::int for $3::int) AS chunk FROM videos WHERE id = $1`, [
+    req.params.id,
+    start + 1,
+    end - start + 1
+  ]);
+  const chunk = part.rows[0]?.chunk;
+  if (!chunk) return res.status(404).end();
+  res.status(206);
+  res.setHeader('Content-Range', `bytes ${start}-${end}/${size}`);
+  res.setHeader('Content-Length', chunk.length);
+  res.end(chunk);
 }));
 
 app.use('/api', (_req, res) => res.status(404).json({ success: false, error: 'Not found.' }));
@@ -870,18 +824,7 @@ app.use((err, _req, res, _next) => {
 const port = Number(process.env.PORT) || 4000;
 app.listen(port, '0.0.0.0', () => console.log(`Server listening on ${port}`));
 
-// Resume or start conversion for any video that isn't browser-playable (including ones uploaded before this existed).
-if (ffmpegPath) {
-  pool
-    .query(`SELECT id, mime FROM videos`)
-    .then(async r => {
-      for (const v of r.rows) {
-        const m = v.mime.replace(/^pending:/, '');
-        if (v.mime.startsWith('pending:') || !BROWSER_SAFE_MIME.has(m)) {
-          if (!v.mime.startsWith('pending:')) await pool.query(`UPDATE videos SET mime = $2 WHERE id = $1`, [v.id, `pending:${m}`]);
-          queueConvert(v.id);
-        }
-      }
-    })
-    .catch(e => console.error('[VIDEO] startup scan failed:', e.message));
-}
+// Start-up: restore the original type of any video left marked "pending" by the removed converter.
+pool
+  .query(`UPDATE videos SET mime = substring(mime from 9) WHERE mime LIKE 'pending:%'`)
+  .catch(e => console.error('[VIDEO] cleanup failed:', e.message));
