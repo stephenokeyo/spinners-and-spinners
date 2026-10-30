@@ -1,6 +1,6 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
-import { ShieldCheck, Lock, Sparkles } from 'lucide-react';
+import { ShieldCheck, Lock, Sparkles, MessageCircle } from 'lucide-react';
 import { SocialIcon } from './SocialIcon';
 import { openContactSection } from './ContactPage';
 
@@ -75,6 +75,19 @@ export const Footer: React.FC = () => {
           <div className="pt-4 space-y-1.5">
             <h4 className="text-xs uppercase tracking-wider text-white font-semibold">Designed By</h4>
             <p className="text-[11px] text-[#c5a059] font-medium">SecureTech Sln &amp; Spinners</p>
+            <div className="flex items-center gap-2 text-[11px]">
+              <a href="tel:+254797508993" className="hover:text-white font-mono">+254 797 508 993</a>
+              <a
+                href="https://wa.me/254797508993"
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Chat on WhatsApp"
+                aria-label="Chat with SecureTech Sln on WhatsApp"
+                className="w-7 h-7 rounded-full bg-emerald-600/20 border border-emerald-500/40 flex items-center justify-center text-emerald-300 hover:bg-emerald-600/30"
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+              </a>
+            </div>
           </div>
         </div>
 
