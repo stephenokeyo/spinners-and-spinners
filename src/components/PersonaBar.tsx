@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { Key, LogIn, LogOut, Clock } from 'lucide-react';
+import { Key, LogOut, Clock, User } from 'lucide-react';
 
 const LiveClock: React.FC = () => {
   const [now, setNow] = useState(() => new Date());
@@ -61,10 +61,11 @@ export const PersonaBar: React.FC = () => {
         ) : (
           <button
             onClick={() => setIsLoginModalOpen(true)}
-            className="px-3 py-1 bg-[#c5a059] hover:bg-[#d4b069] text-black rounded text-[11px] font-semibold flex items-center gap-1.5 transition-colors"
+            title="Partner / Admin login"
+            aria-label="Partner / Admin login"
+            className="w-8 h-8 rounded-full bg-neutral-300 hover:bg-white text-neutral-500 flex items-center justify-center overflow-hidden transition-colors"
           >
-            <LogIn className="w-3.5 h-3.5" />
-            <span>Partner / Admin Login</span>
+            <User className="w-5 h-5 fill-current" />
           </button>
         )}
       </div>
