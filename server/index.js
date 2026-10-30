@@ -144,9 +144,9 @@ const sendLoginCode = async user => {
     [user.id, sha(`${user.id}:${code}`)]
   );
   await mailer.sendMail({
-    from: `"Spinners&Spinners" <${process.env.SMTP_USER}>`,
+    from: `"texStyle" <${process.env.SMTP_USER}>`,
     to: user.email,
-    subject: `Your Spinners&Spinners login code: ${code}`,
+    subject: `Your texStyle login code: ${code}`,
     text: `Your login code is ${code}. It expires in ${CODE_TTL_MIN} minutes.\n\nIf you did not try to sign in, ignore this email and consider changing your password.`
   });
 };
@@ -401,7 +401,7 @@ app.post('/api/2fa/setup', wrap(async (req, res) => {
   if (req.user.totp_enabled) return fail(res, 409, 'Two-factor is already enabled.');
   const secret = b32encode(crypto.randomBytes(20));
   await pool.query(`UPDATE users SET totp_secret = $2 WHERE id = $1`, [req.user.id, secret]);
-  const label = encodeURIComponent(`Spinners&Spinners:${req.user.email}`);
+  const label = encodeURIComponent(`texStyle:${req.user.email}`);
   res.json({ success: true, secret, otpauth: `otpauth://totp/${label}?secret=${secret}&issuer=Spinners%26Spinners` });
 }));
 
@@ -787,7 +787,7 @@ app.post('/api/products', wrap(async (req, res) => {
     description,
     details: [],
     materials: [],
-    sizes: ['Spinners&Spinners Custom Measurements'],
+    sizes: ['texStyle Custom Measurements'],
     leadTime: 'On request',
     featured: false,
     stock,
@@ -912,12 +912,21 @@ pool
   .query(
     `INSERT INTO partners (id, data) VALUES ('spinners-and-spinners', $1) ON CONFLICT (id) DO NOTHING`,
     [JSON.stringify({
-      id: 'spinners-and-spinners', name: 'Spinners&Spinners', location: '', tagline: 'Official Spinners&Spinners collection',
-      ethos: '', accentColor: '#c5a059', founded: new Date().getFullYear(), leadDesigner: 'Spinners&Spinners',
-      specialty: '', story: '', bannerText: 'Official Spinners&Spinners collection', whatsapp: '', kraPin: '', address: '',
+      id: 'spinners-and-spinners', name: 'texStyle', location: '', tagline: 'Official texStyle collection',
+      ethos: '', accentColor: '#c5a059', founded: new Date().getFullYear(), leadDesigner: 'texStyle',
+      specialty: '', story: '', bannerText: 'Official texStyle collection', whatsapp: '', kraPin: '', address: '',
       deliveryAvailable: false, deliveryFee: 0
     })]
   )
+  .then(async () => {
+    // Rename the house store created before the rebrand.
+    const r = await pool.query(`SELECT data FROM partners WHERE id = 'spinners-and-spinners'`);
+    const d = r.rows[0]?.data;
+    if (d && d.name === 'Spinners&Spinners') {
+      const next = { ...d, name: 'texStyle', leadDesigner: 'texStyle', tagline: 'Official texStyle collection', bannerText: 'Official texStyle collection' };
+      await pool.query(`UPDATE partners SET data = $1 WHERE id = 'spinners-and-spinners'`, [JSON.stringify(next)]);
+    }
+  })
   .catch(e => console.error('[STORE] house store failed:', e.message));
 
 // Start-up: restore the original type of any video left marked "pending" by the removed converter.

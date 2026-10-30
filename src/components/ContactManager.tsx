@@ -62,7 +62,7 @@ export const ContactManager: React.FC = () => {
       <form onSubmit={save} className="bg-[#121417] border border-white/10 rounded-lg p-5 space-y-3 text-xs">
         <h3 className="text-sm font-semibold text-white uppercase tracking-wider">Contact us details</h3>
         <p className="text-[11px] text-neutral-400">Shown on the Contact page and in the website footer.</p>
-        <input value={website} onChange={e => setWebsite(e.target.value)} placeholder="Website (e.g. https://spinnersandspinners.com)" className={cls} />
+        <input value={website} onChange={e => setWebsite(e.target.value)} placeholder="Website (e.g. https://weartexstyle.onrender.com)" className={cls} />
         <input value={location} onChange={e => setLocation(e.target.value)} placeholder="Location / address" className={cls} />
         <label className="block space-y-1">
           <span className="text-neutral-400">Emails (one per line)</span>

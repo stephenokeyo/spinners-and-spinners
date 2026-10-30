@@ -73,7 +73,7 @@ export const ShowcaseVideos: React.FC = () => {
   if (showcaseVideos.length === 0) return null;
   return (
     <section className="w-full px-4 sm:px-6 py-10 border-b border-white/5">
-      <h2 className="font-serif text-2xl text-white mb-1">Spinners&amp;Spinners Fashion Showcase</h2>
+      <h2 className="font-serif text-2xl text-white mb-1">texStyle Fashion Showcase</h2>
       <p className="text-xs text-neutral-400 mb-5">Watch the fashion pieces available from our partner houses.</p>
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
         {showcaseVideos.map(v => (

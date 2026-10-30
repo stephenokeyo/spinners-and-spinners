@@ -173,7 +173,7 @@ export const ContactPage: React.FC = () => {
         <div className="flex flex-wrap gap-3 text-xs">
           {contact.supportPhone && (
             <>
-              <a href={`https://wa.me/${normalizeWhatsApp(contact.supportPhone)}?text=${encodeURIComponent('Hello, I need technical support on Spinners&Spinners.')}`} target="_blank" rel="noopener noreferrer"
+              <a href={`https://wa.me/${normalizeWhatsApp(contact.supportPhone)}?text=${encodeURIComponent('Hello, I need technical support on texStyle.')}`} target="_blank" rel="noopener noreferrer"
                 className="px-4 py-2 font-semibold uppercase tracking-wider text-black bg-[#c5a059] hover:bg-[#d4b069] rounded flex items-center gap-1.5">
                 <MessageCircle className="w-3.5 h-3.5" /> WhatsApp support
               </a>

@@ -16,6 +16,7 @@ import { LoginModal } from './components/LoginModal';
 import { FulfilmentModal } from './components/FulfilmentModal';
 import { Footer } from './components/Footer';
 import { ContactPage } from './components/ContactPage';
+import { AboutPage } from './components/AboutPage';
 
 const AppContent: React.FC = () => {
   const { currentView, currentUser, selectedPartnerId, partners } = useApp();
@@ -49,6 +50,7 @@ const AppContent: React.FC = () => {
             {currentView === 'dashboard' && renderDashboard()}
             {currentView === 'orders' && <OrdersView />}
             {currentView === 'contact' && <ContactPage />}
+            {currentView === 'about' && <AboutPage />}
           </>
         )}
       </main>

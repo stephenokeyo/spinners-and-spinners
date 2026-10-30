@@ -12,7 +12,7 @@ export const Footer: React.FC = () => {
       <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-10 pb-12 border-b border-white/5">
         <div className="md:col-span-5 space-y-4">
           <span className="font-editorial text-2xl tracking-[0.2em] font-medium text-white block">
-           Spinners&Spinners
+           texStyle
           </span>
           <p className="text-neutral-400 font-light leading-relaxed max-w-sm">
             A digital guild connecting private clients directly to historic and avant-garde couture spinners. Each partner operates a dedicated webpage, an isolated technical vault, and strictly guarded transactional communications.
@@ -22,6 +22,7 @@ export const Footer: React.FC = () => {
             <ShieldCheck className="w-4 h-4" />
             <span>Multi-Tenant Partner Isolation Protocol Enforced</span>
           </div>
+          <button onClick={() => navigateTo('about')} className="text-[11px] text-neutral-300 hover:text-white underline underline-offset-4">About texStyle · our brand story</button>
         </div>
 
         <div className="md:col-span-3 space-y-3">
@@ -44,7 +45,7 @@ export const Footer: React.FC = () => {
           {socialLinks.length > 0 && (
             <div className="pt-4 space-y-3">
               <h4 className="text-xs uppercase tracking-wider text-white font-semibold">Social Media</h4>
-              {[{ id: null as string | null, name: 'Spinners&Spinners' }, ...partners.map(p => ({ id: p.id as string | null, name: p.name }))]
+              {[{ id: null as string | null, name: 'texStyle' }, ...partners.map(p => ({ id: p.id as string | null, name: p.name }))]
                 .map(group => {
                   const links = socialLinks.filter(l => (l.partnerId || null) === group.id);
                   if (!links.length) return null;
@@ -109,13 +110,13 @@ export const Footer: React.FC = () => {
             Security & Client Confidentiality
           </h4>
           <p className="text-neutral-400 font-light leading-relaxed text-[11px]">
-            Inquiries, Spinners&amp;Spinners fashions, and order conversations are strictly sealed between client and chosen spinner. Competing partners have zero clearance to access client records or order dialogues.
+            Inquiries, texStyle fashions, and order conversations are strictly sealed between client and chosen spinner. Competing partners have zero clearance to access client records or order dialogues.
           </p>
         </div>
       </div>
 
       <div className="w-full pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-neutral-500">
-        <p>© {new Date().getFullYear()} Spinners&Spinners. All rights reserved.</p>
+        <p>© {new Date().getFullYear()} texStyle. All rights reserved.</p>
         <div className="flex items-center gap-4">
           <span>Private Client Encrypted Protocol</span>
           <span>·</span>

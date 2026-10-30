@@ -136,7 +136,7 @@ export const PartnerDashboard: React.FC = () => {
                 onClick={() => navigateTo('dashboard', currentUser.partnerId)}
                 className="px-4 py-2 bg-[#c5a059] text-black font-semibold text-xs tracking-wider uppercase rounded hover:bg-[#d4b069] transition-colors"
               >
-                Go to My Spinners&Spinners ({currentUser.partnerName})
+                Go to My texStyle ({currentUser.partnerName})
               </button>
             )}
             <button
@@ -161,7 +161,7 @@ export const PartnerDashboard: React.FC = () => {
           <div>
             <div className="flex items-center gap-2 text-xs text-[#c5a059] uppercase tracking-wider mb-1">
               <FolderLock className="w-4 h-4" />
-              <span>Partner Private Spinners&Spinners Terminal</span>
+              <span>Partner Private texStyle Terminal</span>
               {currentUser.role === 'admin' && (
                 <span className="text-amber-400 font-mono text-[10px] bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
                   Admin Supervisory Mode
@@ -169,7 +169,7 @@ export const PartnerDashboard: React.FC = () => {
               )}
             </div>
             <h1 className="text-3xl font-editorial font-medium text-white">
-              {partner.name} Spinners&Spinners Console
+              {partner.name} texStyle Console
             </h1>
             <p className="text-xs text-neutral-400 font-light mt-0.5">
               Secure repository for {partner.location} · Isolated from all competing partner houses
@@ -245,7 +245,7 @@ export const PartnerDashboard: React.FC = () => {
             }`}
           >
             <ShoppingBag className="w-4 h-4 text-emerald-400" />
-            <span>Spinners&Spinners Commissions</span>
+            <span>texStyle Commissions</span>
             <span className="font-mono text-[11px] text-emerald-400">({partnerOrders.length})</span>
           </button>
 
@@ -571,7 +571,7 @@ export const PartnerDashboard: React.FC = () => {
                       >
                         <option value="Confirmed">Confirmed</option>
                         <option value="In Production">In Production</option>
-                        <option value="Spinners&Spinners QA">Spinners&Spinners QA</option>
+                        <option value="texStyle QA">texStyle QA</option>
                         <option value="Dispatched">Dispatched</option>
                       </select>
                     </div>
@@ -632,7 +632,7 @@ export const PartnerDashboard: React.FC = () => {
                 <input
                   type="text"
                   required
-                  placeholder="e.g. MA-Spinners&Spinners-GoldWeft-Specs-v2.pdf"
+                  placeholder="e.g. MA-texStyle-GoldWeft-Specs-v2.pdf"
                   value={newFileName}
                   onChange={e => setNewFileName(e.target.value)}
                   className="w-full bg-white/5 border border-white/10 rounded px-3 py-2 text-white focus:outline-none focus:border-[#c5a059]"

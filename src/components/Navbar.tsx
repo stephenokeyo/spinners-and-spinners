@@ -32,7 +32,7 @@ export const Navbar: React.FC = () => {
           className="text-left group cursor-pointer min-w-0"
         >
           <span className="font-editorial text-xl sm:text-2xl tracking-[0.12em] sm:tracking-[0.2em] font-medium text-white group-hover:text-[#c5a059] transition-colors whitespace-nowrap shrink-0 block">
-           Spinners&Spinners
+           texStyle
           </span>
           <span className="text-[10px] uppercase tracking-[0.3em] text-[#a1a1aa] block -mt-1 font-sans">
             Haute Couture Guild & Direct Brand Webpages
@@ -93,6 +93,16 @@ export const Navbar: React.FC = () => {
                 ({relevantOrders.length})
               </span>
             )}
+          </button>
+
+          {/* About */}
+          <button
+            onClick={() => navigateTo('about')}
+            className={`hover:text-white transition-colors whitespace-nowrap shrink-0 pb-0.5 border-b-2 ${
+              currentView === 'about' ? 'border-[#c5a059] text-white' : 'border-transparent text-neutral-400'
+            }`}
+          >
+            About Us
           </button>
 
           {/* Contact */}

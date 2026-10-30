@@ -21,8 +21,8 @@ export const buildWhatsAppUrl = (
 ): string | null => {
   if (!partner || !isValidWhatsApp(partner.whatsapp)) return null;
   let text = product
-    ? `Hello ${partner.name}, I'm interested in "${product.title}" that I saw on Spinners&Spinners.`
-    : `Hello ${partner.name}, I found you on Spinners&Spinners.`;
+    ? `Hello ${partner.name}, I'm interested in "${product.title}" that I saw on texStyle.`
+    : `Hello ${partner.name}, I found you on texStyle.`;
   if (fulfilment === 'visit') text += ` I would like to visit your business at ${partner.address} and buy in person.`;
   if (fulfilment === 'collect') text += ` I would like to buy it and collect it myself from ${partner.address}.`;
   if (fulfilment === 'delivery') {

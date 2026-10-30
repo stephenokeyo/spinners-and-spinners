@@ -32,7 +32,7 @@ export const OrdersView: React.FC = () => {
                   ? 'Guild-Wide Transaction Ledger'
                   : currentUser.role === 'partner'
                   ? `${currentUser.partnerName} Client Commissions`
-                  : 'My Spinners&Spinners Commissions & Orders'}
+                  : 'My texStyle Commissions & Orders'}
               </span>
             </div>
             <h1 className="text-3xl font-editorial font-medium text-white">

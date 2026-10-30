@@ -35,7 +35,7 @@ export const ProductCatalog: React.FC = () => {
           <div className="lg:col-span-6 space-y-6">
             <div className="inline-flex items-center gap-2 text-xs uppercase tracking-[0.25em] text-[#c5a059] font-medium">
               <span className="w-6 h-[1px] bg-[#c5a059]" />
-              <span>Spinners&Spinners Haute House & Fashion Portals</span>
+              <span>texStyle Haute House & Fashion Portals</span>
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-editorial font-light tracking-tight leading-[1.08] text-white text-balance">
@@ -76,7 +76,7 @@ export const ProductCatalog: React.FC = () => {
               
               <div className="absolute bottom-4 left-5 right-5 flex items-end justify-between">
                 <div>
-                  <span className="text-[10px] uppercase tracking-widest text-[#c5a059]">Spinners&amp;Spinners Partner Houses</span>
+                  <span className="text-[10px] uppercase tracking-widest text-[#c5a059]">texStyle Partner Houses</span>
                   <p className="text-sm font-editorial text-white">{partners.length} Partner {partners.length === 1 ? 'House' : 'Houses'}</p>
                 </div>
                 <span className="text-xs text-white/70 font-mono tracking-wider uppercase">

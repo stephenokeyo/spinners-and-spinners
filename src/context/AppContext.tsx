@@ -112,10 +112,10 @@ interface AppContextType {
   deleteSocialLink: (id: string) => Promise<void>;
   setSiteHeroImage: (image: string) => Promise<AuthResult>;
   // Navigation & View State
-  currentView: 'catalog' | 'partner' | 'product' | 'dashboard' | 'orders' | 'security' | 'contact';
+  currentView: 'catalog' | 'partner' | 'product' | 'dashboard' | 'orders' | 'security' | 'contact' | 'about';
   selectedPartnerId: string | null;
   selectedProductId: string | null;
-  navigateTo: (view: 'catalog' | 'partner' | 'product' | 'dashboard' | 'orders' | 'security' | 'contact', partnerId?: string, productId?: string) => void;
+  navigateTo: (view: 'catalog' | 'partner' | 'product' | 'dashboard' | 'orders' | 'security' | 'contact' | 'about', partnerId?: string, productId?: string) => void;
   
   // RBAC Access Control checks
   canAccessPartnerFiles: (partnerId: string) => boolean;
@@ -203,7 +203,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const currentUser: User = me || guestUser;
 
   // Navigation State
-  const [currentView, setCurrentView] = useState<'catalog' | 'partner' | 'product' | 'dashboard' | 'orders' | 'security' | 'contact'>('catalog');
+  const [currentView, setCurrentView] = useState<'catalog' | 'partner' | 'product' | 'dashboard' | 'orders' | 'security' | 'contact' | 'about'>('catalog');
   const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
 
@@ -334,7 +334,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (selectedPartnerId === partnerId) setSelectedPartnerId(null);
     await refresh();
   };
-  const navigateTo = (view: 'catalog' | 'partner' | 'product' | 'dashboard' | 'orders' | 'security' | 'contact', partnerId?: string, productId?: string) => {
+  const navigateTo = (view: 'catalog' | 'partner' | 'product' | 'dashboard' | 'orders' | 'security' | 'contact' | 'about', partnerId?: string, productId?: string) => {
     setCurrentView(view);
     if (partnerId !== undefined) setSelectedPartnerId(partnerId);
     if (productId !== undefined) setSelectedProductId(productId);
@@ -435,7 +435,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             senderId: 'system',
             senderName: `${partner.name} Concierge`,
             senderRole: 'partner',
-            content: `Welcome to the ${partner.name} Spinners&Spinners spinner. Our artisan directors are available for sizing inquiries, fabric consultations, and private appointments.`,
+            content: `Welcome to the ${partner.name} texStyle spinner. Our artisan directors are available for sizing inquiries, fabric consultations, and private appointments.`,
             timestamp: 'Just now',
             isSystemNotice: true
           }
@@ -482,9 +482,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const partner = partners.find(p => p.id === thread.partnerId);
         const replies = [
           `Thank you for your inquiry regarding this piece. We would be pleased to hand-prepare tailored swatches for you.`,
-          `Our master patternmaker has received your note. Each silhouette is hand-fitted with Spinners&Spinners precision.`,
+          `Our master patternmaker has received your note. Each silhouette is hand-fitted with texStyle precision.`,
           `We will gladly arrange white-glove direct courier delivery for this commission.`,
-          `Understood. We have logged your Spinners&Spinners specifications with the Paris & Milan spinners.`
+          `Understood. We have logged your texStyle specifications with the Paris & Milan spinners.`
         ];
         const randomReply = replies[Math.floor(Math.random() * replies.length)];
 

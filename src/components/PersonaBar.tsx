@@ -44,7 +44,7 @@ export const PersonaBar: React.FC = () => {
           </div>
         </div>
         ) : (
-          <span className="text-[#a1a1aa] text-[11px] tracking-wide">Welcome to Spinners&Spinners</span>
+          <span className="text-[#a1a1aa] text-[11px] tracking-wide">Welcome to texStyle</span>
         )}
 
         {signedIn ? (

@@ -149,7 +149,7 @@ export const ReceiptModal: React.FC<Props> = ({ order, partnerId, onClose }) => 
             <div className="border-t border-black pt-1">Issued by (name &amp; signature)</div>
             <div className="border-t border-black pt-1">Received by client (name, signature &amp; date)</div>
           </div>
-          <p className="text-center text-[10px] pt-8 text-neutral-600">Thank you for shopping with {partner.name} · Spinners&amp;Spinners marketplace</p>
+          <p className="text-center text-[10px] pt-8 text-neutral-600">Thank you for shopping with {partner.name} · texStyle marketplace</p>
         </div>
       </div>
     </div>,

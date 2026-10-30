@@ -14,7 +14,7 @@ export const CheckoutModal: React.FC = () => {
     openChatForPartner
   } = useApp();
 
-  const [selectedSize, setSelectedSize] = useState<string>(checkoutProduct?.sizes[0] || 'Spinners&Spinners Custom Measurements');
+  const [selectedSize, setSelectedSize] = useState<string>(checkoutProduct?.sizes[0] || 'texStyle Custom Measurements');
   const [shippingAddress, setShippingAddress] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
   const [orderResult, setOrderResult] = useState<{ success: boolean; orderId?: string } | null>(null);
@@ -44,7 +44,7 @@ export const CheckoutModal: React.FC = () => {
             </div>
             <div>
               <h3 className="font-editorial text-xl text-white font-medium">
-                Spinners&Spinners Spinner Commission
+                texStyle Spinner Commission
               </h3>
               <p className="text-[11px] text-neutral-400">
                 Direct order with {checkoutProduct.partnerName}
@@ -139,7 +139,7 @@ export const CheckoutModal: React.FC = () => {
             {/* Sizing Selection */}
             <div>
               <label className="block text-neutral-300 font-medium mb-1.5">
-                Select Sizing or Spinners&Spinners Fit:
+                Select Sizing or texStyle Fit:
               </label>
               <select
                 value={selectedSize}
@@ -181,7 +181,7 @@ export const CheckoutModal: React.FC = () => {
 
               <div>
                 <label className="block text-neutral-300 font-medium mb-1">
-                  Spinners&Spinners Notes / Fitting Specifications:
+                  texStyle Notes / Fitting Specifications:
                 </label>
                 <textarea
                   rows={2}
