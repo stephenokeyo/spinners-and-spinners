@@ -17,6 +17,30 @@ const LiveClock: React.FC = () => {
   );
 };
 
+const MESSAGES = [
+  { label: 'Purpose', text: 'Empower Authentic African Fashion' },
+  { label: 'Vision', text: 'To become the premier brand for all seasonal apparel in the East African region, ensuring that every wardrobe and every household around the globe includes a piece of texStyle.' },
+  { label: 'Values', text: 'Honesty & Integrity, Long-term forward-thinking, Continuous learning, Exceeding expectations, and Resilience & Determination.' }
+];
+
+const BrandTicker: React.FC = () => {
+  const [i, setI] = useState(0);
+  const m = MESSAGES[i];
+  const seconds = Math.max(10, Math.round((m.label.length + m.text.length) * 0.17) + 8);
+  return (
+    <div className="flex-1 min-w-0 overflow-hidden whitespace-nowrap" aria-live="off">
+      <span
+        key={i}
+        className="ticker-rtl inline-block text-[12px] text-neutral-200"
+        style={{ animationDuration: `${seconds}s` }}
+        onAnimationEnd={() => setI(n => (n + 1) % MESSAGES.length)}
+      >
+        <strong className="text-[#c5a059] uppercase tracking-wider mr-2">{m.label}:</strong>{m.text}
+      </span>
+    </div>
+  );
+};
+
 export const PersonaBar: React.FC = () => {
   const { currentUser, logout, setIsLoginModalOpen } = useApp();
   const signedIn = currentUser.role !== 'client';
@@ -44,8 +68,10 @@ export const PersonaBar: React.FC = () => {
           </div>
         </div>
         ) : (
-          <span className="text-[#a1a1aa] text-[11px] tracking-wide">Welcome to texStyle</span>
+          <BrandTicker />
         )}
+
+        {signedIn && <div className="hidden md:flex flex-1 min-w-0"><BrandTicker /></div>}
 
         {signedIn ? (
           <div className="flex items-center gap-3">

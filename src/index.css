@@ -33,6 +33,13 @@
   background: rgba(197, 160, 89, 0.4);
 }
 
+@keyframes ticker-rtl {
+  from { transform: translateX(100%); }
+  to { transform: translateX(-100%); }
+}
+.ticker-rtl { animation: ticker-rtl linear 1 forwards; will-change: transform; }
+@media (prefers-reduced-motion: reduce) { .ticker-rtl { animation-duration: 20s !important; } }
+
 @media print {
   body { background: #fff !important; }
   body > #root, .no-print { display: none !important; }
