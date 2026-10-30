@@ -220,7 +220,7 @@ export const ProductCatalog: React.FC = () => {
                 {/* Product Image Area - clicking redirects to partner page */}
                 <div
                   onClick={() => openWhatsApp(product)}
-                  className="relative aspect-[4/3] bg-neutral-900 overflow-hidden cursor-pointer"
+                  className="relative aspect-[3/4] bg-neutral-900 overflow-hidden cursor-pointer"
                 >
                   <img
                     src={product.image}
