@@ -247,13 +247,29 @@ export const ProductCatalog: React.FC = () => {
                   >
                     {product.title}
                   </h3>
-                  <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center justify-between gap-1">
                     <span className="text-xs font-mono text-white">{formatPrice(product)}</span>
                     <button
                       onClick={() => setViewing(product)}
-                      className="px-2 py-1 text-[10px] font-semibold tracking-wider uppercase text-black bg-[#c5a059] hover:bg-[#d4b069] rounded whitespace-nowrap"
+                      className="px-2 py-1 text-[10px] font-semibold tracking-wider uppercase text-white bg-white/10 hover:bg-white/20 rounded whitespace-nowrap"
                     >
                       View
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => openChatForPartner(product.partnerId, product.id)}
+                      title={`Chat with ${product.partnerName} about this piece`}
+                      aria-label="Chat"
+                      className="p-1.5 rounded bg-white/5 hover:bg-white/15 border border-white/10"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5 text-[#c5a059]" />
+                    </button>
+                    <button
+                      onClick={() => setWhatsappProduct(product)}
+                      className="flex-1 px-2 py-1.5 text-[10px] font-semibold tracking-wider uppercase text-black bg-[#c5a059] hover:bg-[#d4b069] rounded whitespace-nowrap flex items-center justify-center gap-1"
+                    >
+                      WhatsApp <ArrowRight className="w-3 h-3" />
                     </button>
                   </div>
                 </div>

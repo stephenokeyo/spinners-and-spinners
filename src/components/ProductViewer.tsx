@@ -55,7 +55,7 @@ export const ProductViewer: React.FC<{ product: Product; onClose: () => void }> 
                 onClick={() => { onClose(); setWhatsappProduct(product); }}
                 className="flex-1 px-4 py-2.5 text-xs font-semibold tracking-wider uppercase text-black bg-[#c5a059] hover:bg-[#d4b069] rounded flex items-center justify-center gap-1.5"
               >
-                Proceed <ArrowRight className="w-3 h-3" />
+                WhatsApp / Proceed <ArrowRight className="w-3 h-3" />
               </button>
             </div>
           </div>
