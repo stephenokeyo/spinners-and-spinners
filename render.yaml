@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: weartexstyle
+    name: spinnersandspinners
     runtime: node
     plan: free
     buildCommand: npm install --include=dev && npm run build
