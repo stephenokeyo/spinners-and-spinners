@@ -26,8 +26,7 @@ export const AboutPage: React.FC = () => (
         </p>
       </div>
       <figure className="rounded overflow-hidden border border-white/10 bg-neutral-900">
-        <img src="/brand/story1.jpg" alt="Peggy Kigaita, Team Leader - Fashion" className="w-full h-auto" />
-        <figcaption className="flex justify-between text-xs text-neutral-300 px-3 py-2"><span className="font-semibold">Peggy Kigaita</span><span>Team Leader - Fashion</span></figcaption>
+        <img src="/brand/store.png" alt="texStyle store display" className="w-full h-auto" />
       </figure>
     </header>
 
