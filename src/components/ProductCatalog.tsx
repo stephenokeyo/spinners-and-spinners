@@ -50,12 +50,18 @@ export const ProductCatalog: React.FC = () => {
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-editorial font-light tracking-tight leading-[1.08] text-white text-balance">
-              Where independent spinners open their private boutiques.
+              Welcome
             </h1>
+            <h2 className="text-2xl sm:text-3xl font-editorial text-[#c5a059]">texStyle</h2>
 
-            <p className="text-base text-neutral-300 leading-relaxed max-w-xl font-light">
-              Explore the master catalog of all collective fashions. Select any design to message that partner directly on WhatsApp, with your chosen piece already filled in.
-            </p>
+            <div className="space-y-3 text-base text-neutral-300 leading-relaxed max-w-xl font-light">
+              <p>
+                texStyle is a distinguished fashion brand that embodies the vibrant, stylish, and confident spirit of Africa. Catering to discerning individuals aged 35-50, both men and women, our brand honours the rich heritage, pride, and passion of Africa while embracing the future.
+              </p>
+              <p>
+                Our designs reflect an authentic and ambitious African lifestyle, ensuring a look and feel that resonates with the continent's dynamic energy. By understanding and meeting the customers' needs for authentic, trendy, and stylish African attire with a modern edge, our designs embody a zeal for life and instil pride in being affiliated with brands made in Kenya.
+              </p>
+            </div>
 
             <div className="pt-2 flex flex-wrap items-center gap-4 text-xs text-neutral-400">
               <div className="flex items-center gap-1.5">
