@@ -7,4 +7,4 @@ jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - run: curl -fsS --retry 3 --max-time 60 https://spinnersandspinners.onrender.com/api/bootstrap > /dev/null
+      - run: curl -fsS --retry 3 --max-time 60 https://weartexstyle.onrender.com/api/bootstrap > /dev/null
