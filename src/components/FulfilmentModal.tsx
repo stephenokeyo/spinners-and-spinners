@@ -7,6 +7,9 @@ export const FulfilmentModal: React.FC = () => {
   const { whatsappProduct, setWhatsappProduct, partners, globalWhatsapp } = useApp();
   const [choice, setChoice] = useState<Fulfilment>('visit');
   const [deliveryLocation, setDeliveryLocation] = useState('');
+  const [clientName, setClientName] = useState('');
+  const [clientPhone, setClientPhone] = useState('');
+  const inputCls = 'w-full bg-neutral-900 border border-white/10 rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-[#c5a059]';
   const [error, setError] = useState('');
 
   if (!whatsappProduct) return null;
@@ -19,11 +22,11 @@ export const FulfilmentModal: React.FC = () => {
   };
 
   const proceed = () => {
-    if (choice === 'delivery' && !deliveryLocation.trim()) {
-      setError('Enter where the item should be delivered.');
+    if (choice === 'delivery' && (!deliveryLocation.trim() || !clientName.trim() || !clientPhone.trim())) {
+      setError('Enter your name, phone number and delivery location.');
       return;
     }
-    const url = buildWhatsAppUrl({ ...partner, whatsapp: globalWhatsapp || partner.whatsapp }, whatsappProduct, choice, deliveryLocation.trim());
+    const url = buildWhatsAppUrl({ ...partner, whatsapp: globalWhatsapp || partner.whatsapp }, whatsappProduct, choice, deliveryLocation.trim(), { name: clientName.trim(), phone: clientPhone.trim() });
     if (url) window.open(url, '_blank', 'noopener,noreferrer');
     close();
   };
@@ -33,10 +36,10 @@ export const FulfilmentModal: React.FC = () => {
     { id: 'collect', label: 'Self collection', hint: partner.address || 'Address shared on chat', icon: <MapPin className="w-4 h-4" />, show: true },
     {
       id: 'delivery',
-      label: 'Delivery',
-      hint: `Delivery charge: KSh ${partner.deliveryFee.toLocaleString()} (paid by you)`,
+      label: 'By delivery',
+      hint: partner.deliveryFee > 0 ? `Delivery charge: KSh ${partner.deliveryFee.toLocaleString()} (paid by you)` : 'Delivery charge confirmed on chat',
       icon: <Truck className="w-4 h-4" />,
-      show: !!partner.deliveryAvailable
+      show: true
     }
   ];
 
@@ -71,12 +74,11 @@ export const FulfilmentModal: React.FC = () => {
         </div>
 
         {choice === 'delivery' && (
-          <input
-            value={deliveryLocation}
-            onChange={e => setDeliveryLocation(e.target.value)}
-            placeholder="Your delivery location"
-            className="w-full bg-neutral-900 border border-white/10 rounded px-3 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-[#c5a059]"
-          />
+          <div className="space-y-2">
+            <input value={clientName} onChange={e => setClientName(e.target.value)} placeholder="Your name" className={inputCls} />
+            <input value={clientPhone} onChange={e => setClientPhone(e.target.value)} placeholder="Your phone number" inputMode="tel" className={inputCls} />
+            <input value={deliveryLocation} onChange={e => setDeliveryLocation(e.target.value)} placeholder="Your delivery location" className={inputCls} />
+          </div>
         )}
         {error && <p className="text-xs text-red-300">{error}</p>}
 

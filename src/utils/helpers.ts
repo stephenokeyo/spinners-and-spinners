@@ -16,7 +16,8 @@ export const buildWhatsAppUrl = (
   partner: Partner | undefined,
   product?: Product,
   fulfilment?: Fulfilment,
-  deliveryLocation?: string
+  deliveryLocation?: string,
+  client?: { name?: string; phone?: string }
 ): string | null => {
   if (!partner || !isValidWhatsApp(partner.whatsapp)) return null;
   let text = product
@@ -25,7 +26,12 @@ export const buildWhatsAppUrl = (
   if (fulfilment === 'visit') text += ` I would like to visit your business at ${partner.address} and buy in person.`;
   if (fulfilment === 'collect') text += ` I would like to buy it and collect it myself from ${partner.address}.`;
   if (fulfilment === 'delivery') {
-    text += ` I would like it delivered${deliveryLocation ? ` to ${deliveryLocation}` : ''}. I understand the delivery charge is KSh ${partner.deliveryFee.toLocaleString()}.`;
+    text += ` I would like it delivered${deliveryLocation ? ` to ${deliveryLocation}` : ''}.`;
+    text += partner.deliveryFee > 0
+      ? ` I understand the delivery charge is KSh ${partner.deliveryFee.toLocaleString()}.`
+      : ' Please confirm the delivery charge.';
+    if (client?.name) text += ` My name is ${client.name}.`;
+    if (client?.phone) text += ` You can reach me on ${client.phone}.`;
   }
   return `https://wa.me/${normalizeWhatsApp(partner.whatsapp)}?text=${encodeURIComponent(text)}`;
 };

@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { ShoppingBag, Lock, MessageSquare, ArrowRight, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { Order } from '../types';
+import { ReceiptModal } from './ReceiptModal';
+import { ShoppingBag, Lock, MessageSquare, ArrowRight, ShieldCheck, CheckCircle2, Printer } from 'lucide-react';
 
 export const OrdersView: React.FC = () => {
   const {
@@ -11,6 +13,8 @@ export const OrdersView: React.FC = () => {
     canAccessOrder,
     updateOrderStatus
   } = useApp();
+  const [receiptOrder, setReceiptOrder] = useState<Order | null>(null);
+  const [newReceipt, setNewReceipt] = useState(false);
 
   // Filter orders according to RBAC
   const visibleOrders = orders.filter(o => canAccessOrder(o));
@@ -42,6 +46,14 @@ export const OrdersView: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3">
+            {(currentUser.role === 'partner' || currentUser.role === 'admin') && (
+              <button
+                onClick={() => setNewReceipt(true)}
+                className="px-3 py-1.5 border border-[#c5a059]/50 text-[#c5a059] hover:bg-[#c5a059]/10 text-xs rounded flex items-center gap-1.5"
+              >
+                <Printer className="w-3.5 h-3.5" /> New delivery receipt
+              </button>
+            )}
             <span className="text-xs text-neutral-400 font-mono">
               Total Visible: <strong className="text-white">{visibleOrders.length}</strong>
             </span>
@@ -133,6 +145,16 @@ export const OrdersView: React.FC = () => {
                   )}
                 </div>
 
+                {(currentUser.role === 'partner' || currentUser.role === 'admin') && (
+                  <button
+                    onClick={() => setReceiptOrder(order)}
+                    className="px-4 py-2 bg-[#c5a059] hover:bg-[#d4b069] text-black text-xs font-semibold rounded flex items-center gap-1.5"
+                  >
+                    <Printer className="w-3.5 h-3.5" />
+                    <span>Print receipt</span>
+                  </button>
+                )}
+
                 <button
                   onClick={() => openChatForPartner(order.partnerId, order.productId)}
                   className="px-4 py-2 bg-white/5 hover:bg-white/15 border border-white/10 text-xs text-white rounded flex items-center gap-1.5 transition-colors"
@@ -158,6 +180,8 @@ export const OrdersView: React.FC = () => {
           )}
         </div>
       </div>
+      {receiptOrder && <ReceiptModal order={receiptOrder} onClose={() => setReceiptOrder(null)} />}
+      {newReceipt && <ReceiptModal onClose={() => setNewReceipt(false)} />}
     </div>
   );
 };

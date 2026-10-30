@@ -22,8 +22,10 @@ import {
   Plus,
   Send,
   Eye,
-  Settings
+  Settings,
+  Printer
 } from 'lucide-react';
+import { ReceiptModal } from './ReceiptModal';
 
 export const PartnerDashboard: React.FC = () => {
   const {
@@ -52,6 +54,7 @@ export const PartnerDashboard: React.FC = () => {
 
   // Tabs: 'files' | 'chats' | 'orders' | 'settings'
   const [activeTab, setActiveTab] = useState<'files' | 'chats' | 'orders' | 'settings' | 'products'>('products');
+  const [receiptOrder, setReceiptOrder] = useState<Order | null>(null);
 
   // File Upload State
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
@@ -574,6 +577,14 @@ export const PartnerDashboard: React.FC = () => {
                     </div>
 
                     <button
+                      onClick={() => setReceiptOrder(order)}
+                      className="px-3 py-1.5 bg-[#c5a059] hover:bg-[#d4b069] text-black text-xs font-semibold rounded flex items-center gap-1.5"
+                    >
+                      <Printer className="w-3.5 h-3.5" />
+                      <span>Print receipt</span>
+                    </button>
+
+                    <button
                       onClick={() => {
                         setActiveTab('chats');
                         setActiveThreadId(order.chatThreadId);
@@ -688,6 +699,7 @@ export const PartnerDashboard: React.FC = () => {
         </div>
       )}
       <div className="w-full px-6 pb-10"><SocialLinksManager partnerId={partner.id} title={`${partner.name} social media pages`} /></div>
+      {receiptOrder && <ReceiptModal order={receiptOrder} onClose={() => setReceiptOrder(null)} />}
     </div>
   );
 };

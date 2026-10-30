@@ -32,3 +32,15 @@
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(197, 160, 89, 0.4);
 }
+
+@media print {
+  body { background: #fff !important; }
+  body > #root, .no-print { display: none !important; }
+  .receipt-overlay {
+    position: static !important;
+    overflow: visible !important;
+    background: none !important;
+    padding: 0 !important;
+  }
+  #receipt-print { padding: 0 !important; border-radius: 0 !important; }
+}
