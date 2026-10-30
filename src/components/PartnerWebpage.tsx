@@ -35,7 +35,7 @@ export const PartnerWebpage: React.FC = () => {
     canAccessCommunication,
     canAccessPartnerFiles
   } = useApp();
-  const { setWhatsappProduct } = useApp();
+  const { setWhatsappProduct, globalWhatsapp } = useApp();
 
   const partner = partners.find(p => p.id === selectedPartnerId) || partners[0];
   const partnerProducts = products.filter(p => p.partnerId === partner.id && p.stock !== 0);
@@ -319,7 +319,7 @@ export const PartnerWebpage: React.FC = () => {
                     </button>
                   )}
 
-                  {partner.whatsapp && (
+                  {(globalWhatsapp || partner.whatsapp) && (
                     <button
                       onClick={() => setWhatsappProduct(activeProduct)}
                       className="w-full py-2.5 px-4 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-200 font-medium text-xs tracking-wider uppercase rounded transition-all flex items-center justify-center gap-2"

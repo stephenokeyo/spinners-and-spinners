@@ -243,15 +243,17 @@ app.use('/api', auth);
 
 // ---------- bootstrap ----------
 app.get('/api/bootstrap', wrap(async (req, res) => {
-  const [admins, partners, products, hero, social, showcase] = await Promise.all([
+  const [admins, partners, products, hero, social, showcase, gwa] = await Promise.all([
     pool.query(`SELECT 1 FROM users WHERE role = 'admin' LIMIT 1`),
     pool.query(`SELECT data FROM partners ORDER BY created_at`),
     pool.query(`SELECT data FROM products ORDER BY created_at DESC`),
     pool.query(`SELECT value FROM settings WHERE key = 'hero_image'`),
     pool.query(`SELECT id, partner_id, platform, label, url, icon FROM social_links     ORDER BY created_at`),
-        pool.query(`SELECT id, video_id, title, description FROM showcase_videos ORDER BY created_at DESC`)
+        pool.query(`SELECT id, video_id, title, description FROM showcase_videos ORDER BY created_at DESC`),
+        pool.query(`SELECT value FROM settings WHERE key = 'global_whatsapp'`)
       ]);
       res.json({
+        globalWhatsapp: gwa.rows[0]?.value || '',
         showcaseVideos: showcase.rows.map(r => ({ id: r.id, videoId: r.video_id, title: r.title, description: r.description })),
     socialLinks: social.rows.map(r => ({ id: r.id, partnerId: r.partner_id || null, platform: r.platform, label: r.label, url: r.url, icon: r.icon || undefined })),
     hasAdmin: admins.rows.length > 0,
@@ -423,6 +425,17 @@ app.get('/api/admins', needAdmin, wrap(async (req, res) => {
   res.json({ success: true, admins: rows.map(r => ({ id: r.id, name: r.name, email: r.email, twoFactor: !!r.totp_enabled, you: r.id === req.user.id })) });
 }));
 
+const setGlobalWhatsapp = wa =>
+  pool.query(`INSERT INTO settings (key, value) VALUES ('global_whatsapp', $1) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`, [wa]);
+
+// One WhatsApp number that receives enquiries for every product, whoever uploaded it.
+app.put('/api/global-whatsapp', needAdmin, wrap(async (req, res) => {
+  const wa = str(req.body.whatsapp, 30);
+  if (!isValidWhatsApp(wa)) return fail(res, 400, 'Enter a valid WhatsApp number with country code (e.g. +254712345678).');
+  await setGlobalWhatsapp(wa);
+  res.json({ success: true, whatsapp: wa });
+}));
+
 app.post('/api/admins', needAdmin, wrap(async (req, res) => {
   const key = `newadmin|${req.user.id}`;
   if (rateLimited(key, 10)) return fail(res, 429, 'Too many attempts. Try again later.');
@@ -435,12 +448,15 @@ app.post('/api/admins', needAdmin, wrap(async (req, res) => {
   if (password.length < MIN_PASSWORD) return fail(res, 400, `Password must be at least ${MIN_PASSWORD} characters.`);
   const dup = await pool.query(`SELECT 1 FROM users WHERE email = $1`, [email]);
   if (dup.rows.length) return fail(res, 409, 'This email is already in use.');
+  const wa = str(req.body.whatsapp, 30);
+  if (wa && !isValidWhatsApp(wa)) return fail(res, 400, 'Enter a valid WhatsApp number with country code (e.g. +254712345678).');
   const { salt, hash } = await hashPassword(password);
   const id = `user-admin-${Date.now()}`;
   await pool.query(
     `INSERT INTO users (id, name, email, role, avatar, title, salt, hash) VALUES ($1, $2, $3, 'admin', $4, 'Global Platform Admin', $5, $6)`,
     [id, name, email, initials(name), salt, hash]
   );
+  if (wa) await setGlobalWhatsapp(wa);
   console.log(`[SECURITY] admin ${req.user.email} created global admin ${email}`);
   res.json({ success: true, admin: { id, name, email, twoFactor: false, you: false } });
 }));
@@ -823,6 +839,19 @@ app.use((err, _req, res, _next) => {
 
 const port = Number(process.env.PORT) || 4000;
 app.listen(port, '0.0.0.0', () => console.log(`Server listening on ${port}`));
+
+// Built-in store that global admins upload their own products to.
+pool
+  .query(
+    `INSERT INTO partners (id, data) VALUES ('spinners-and-spinners', $1) ON CONFLICT (id) DO NOTHING`,
+    [JSON.stringify({
+      id: 'spinners-and-spinners', name: 'Spinners&Spinners', location: '', tagline: 'Official Spinners&Spinners collection',
+      ethos: '', accentColor: '#c5a059', founded: new Date().getFullYear(), leadDesigner: 'Spinners&Spinners',
+      specialty: '', story: '', bannerText: 'Official Spinners&Spinners collection', whatsapp: '', kraPin: '', address: '',
+      deliveryAvailable: false, deliveryFee: 0
+    })]
+  )
+  .catch(e => console.error('[STORE] house store failed:', e.message));
 
 // Start-up: restore the original type of any video left marked "pending" by the removed converter.
 pool

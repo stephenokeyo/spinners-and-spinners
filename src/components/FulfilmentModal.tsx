@@ -4,7 +4,7 @@ import { Fulfilment, buildWhatsAppUrl, formatPrice } from '../utils/helpers';
 import { X, MapPin, Truck, Store } from 'lucide-react';
 
 export const FulfilmentModal: React.FC = () => {
-  const { whatsappProduct, setWhatsappProduct, partners } = useApp();
+  const { whatsappProduct, setWhatsappProduct, partners, globalWhatsapp } = useApp();
   const [choice, setChoice] = useState<Fulfilment>('visit');
   const [deliveryLocation, setDeliveryLocation] = useState('');
   const [error, setError] = useState('');
@@ -23,7 +23,7 @@ export const FulfilmentModal: React.FC = () => {
       setError('Enter where the item should be delivered.');
       return;
     }
-    const url = buildWhatsAppUrl(partner, whatsappProduct, choice, deliveryLocation.trim());
+    const url = buildWhatsAppUrl({ ...partner, whatsapp: globalWhatsapp || partner.whatsapp }, whatsappProduct, choice, deliveryLocation.trim());
     if (url) window.open(url, '_blank', 'noopener,noreferrer');
     close();
   };

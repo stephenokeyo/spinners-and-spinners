@@ -1,17 +1,28 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { ShieldCheck, ShieldAlert, Trash2, UserPlus, RotateCcw } from 'lucide-react';
 import { api } from '../utils/api';
+import { useApp } from '../context/AppContext';
 import { MIN_PASSWORD_LENGTH } from '../utils/auth';
 
 interface AdminRow { id: string; name: string; email: string; twoFactor: boolean; you: boolean }
 
 export const AdminsManager: React.FC = () => {
+  const { globalWhatsapp, refreshSite } = useApp();
   const [admins, setAdmins] = useState<AdminRow[]>([]);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [wa, setWa] = useState('');
+  const [numberDraft, setNumberDraft] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
+
+  const saveNumber = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const r = await api('PUT', '/api/global-whatsapp', { whatsapp: numberDraft ?? globalWhatsapp });
+    setMsg({ ok: r.success, text: r.success ? 'WhatsApp number saved. Every product now routes to it.' : r.error || 'Could not save the number.' });
+    if (r.success) { setNumberDraft(null); void refreshSite(); }
+  };
 
   const load = useCallback(async () => {
     const r = await api('GET', '/api/admins');
@@ -23,11 +34,12 @@ export const AdminsManager: React.FC = () => {
     e.preventDefault();
     setBusy(true);
     setMsg(null);
-    const r = await api('POST', '/api/admins', { name, email, password });
+    const r = await api('POST', '/api/admins', { name, email, password, whatsapp: wa });
     setBusy(false);
     if (!r.success) return setMsg({ ok: false, text: r.error || 'Could not add the admin.' });
     setMsg({ ok: true, text: `${email} is now a global admin. Share the password with them privately. On first login they must set up their authenticator app before they can use admin features.` });
-    setName(''); setEmail(''); setPassword('');
+    setName(''); setEmail(''); setPassword(''); setWa('');
+    if (wa) void refreshSite();
     void load();
   };
 
@@ -54,18 +66,30 @@ export const AdminsManager: React.FC = () => {
         </p>
       </div>
 
+      <form onSubmit={saveNumber} className="flex flex-wrap items-end gap-3 text-xs border border-white/10 rounded p-3">
+        <label className="flex-1 min-w-[220px] space-y-1">
+          <span className="text-neutral-400">Global WhatsApp number – all products (partners' and admins') send customers here</span>
+          <input value={numberDraft ?? globalWhatsapp} onChange={e => setNumberDraft(e.target.value)} placeholder="+254712345678" className="w-full bg-white/5 border border-white/10 rounded px-2 py-2 text-white" />
+        </label>
+        <button type="submit" className="px-3 py-2 bg-amber-500 hover:bg-amber-400 text-black font-semibold uppercase tracking-wider rounded">Save number</button>
+      </form>
+
       <form onSubmit={add} className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end text-xs">
         <label className="sm:col-span-3 space-y-1">
           <span className="text-neutral-400">Full name</span>
           <input value={name} onChange={e => setName(e.target.value)} required className="w-full bg-white/5 border border-white/10 rounded px-2 py-2 text-white" />
         </label>
-        <label className="sm:col-span-4 space-y-1">
+        <label className="sm:col-span-3 space-y-1">
           <span className="text-neutral-400">Login email</span>
           <input type="email" value={email} onChange={e => setEmail(e.target.value)} required className="w-full bg-white/5 border border-white/10 rounded px-2 py-2 text-white" />
         </label>
-        <label className="sm:col-span-3 space-y-1">
-          <span className="text-neutral-400">Temporary password (min {MIN_PASSWORD_LENGTH})</span>
+        <label className="sm:col-span-2 space-y-1">
+          <span className="text-neutral-400">Temp. password (min {MIN_PASSWORD_LENGTH})</span>
           <input type="text" value={password} onChange={e => setPassword(e.target.value)} required minLength={MIN_PASSWORD_LENGTH} autoComplete="off" className="w-full bg-white/5 border border-white/10 rounded px-2 py-2 text-white" />
+        </label>
+        <label className="sm:col-span-2 space-y-1">
+          <span className="text-neutral-400">WhatsApp (optional)</span>
+          <input value={wa} onChange={e => setWa(e.target.value)} placeholder="+254…" className="w-full bg-white/5 border border-white/10 rounded px-2 py-2 text-white" />
         </label>
         <button type="submit" disabled={busy} className="sm:col-span-2 flex items-center justify-center gap-1 px-3 py-2 bg-amber-500 hover:bg-amber-400 text-black font-semibold uppercase tracking-wider rounded disabled:opacity-60">
           <UserPlus className="w-3.5 h-3.5" /> Add admin

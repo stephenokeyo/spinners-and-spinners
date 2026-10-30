@@ -55,6 +55,8 @@ export interface ShowcaseVideo {
 
 interface AppContextType {
   showcaseVideos: ShowcaseVideo[];
+  globalWhatsapp: string;
+  refreshSite: () => Promise<void>;
   addShowcaseVideo: (input: { file: File; title: string; description: string }) => Promise<AuthResult>;
   deleteShowcaseVideo: (id: string) => Promise<void>;
   currentUser: User;
@@ -167,6 +169,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [siteHeroImage, setSiteHeroImageState] = useState<string>(HERO_IMAGE);
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
   const [showcaseVideos, setShowcaseVideos] = useState<ShowcaseVideo[]>([]);
+  const [globalWhatsapp, setGlobalWhatsapp] = useState('');
   const [files, setFiles] = useState<PartnerFile[]>(() => readStored<PartnerFile[]>('files', []));
   const [orders, setOrders] = useState<Order[]>(() => readStored<Order[]>('orders', []));
   const [chatThreads, setChatThreads] = useState<ChatThread[]>(() => readStored<ChatThread[]>('chats', []));
@@ -207,7 +210,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setProducts(r.products);
       setSiteHeroImageState(r.heroImage || HERO_IMAGE);
       setSocialLinks(r.socialLinks || []);
-      setShowcaseVideos(r.showcaseVideos || []);(r.me);
+      setShowcaseVideos(r.showcaseVideos || []);
+      setGlobalWhatsapp(r.globalWhatsapp || '');(r.me);
       if (!r.me && getToken()) setToken(null);
     }
     setIsLoading(false);
@@ -668,6 +672,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         siteHeroImage,
         setSiteHeroImage,
         showcaseVideos,
+        globalWhatsapp,
+        refreshSite: refresh,
         addShowcaseVideo,
         deleteShowcaseVideo,
         socialLinks,
