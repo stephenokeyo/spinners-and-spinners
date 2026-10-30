@@ -399,10 +399,11 @@ app.post('/api/2fa/reset', wrap(async (req, res) => {
 app.post('/api/2fa/setup', wrap(async (req, res) => {
   if (req.user?.role !== 'admin') return fail(res, 403, 'Only the admin can set up two-factor.');
   if (req.user.totp_enabled) return fail(res, 409, 'Two-factor is already enabled.');
-  const secret = b32encode(crypto.randomBytes(20));
-  await pool.query(`UPDATE users SET totp_secret = $2 WHERE id = $1`, [req.user.id, secret]);
+  const fresh = b32encode(crypto.randomBytes(20));
+  const upd = await pool.query(`UPDATE users SET totp_secret = COALESCE(totp_secret, $2) WHERE id = $1 RETURNING totp_secret`, [req.user.id, fresh]);
+  const secret = upd.rows[0].totp_secret;
   const label = encodeURIComponent(`texStyle:${req.user.email}`);
-  res.json({ success: true, secret, otpauth: `otpauth://totp/${label}?secret=${secret}&issuer=Spinners%26Spinners` });
+  res.json({ success: true, secret, otpauth: `otpauth://totp/${label}?secret=${secret}&issuer=texStyle` });
 }));
 
 app.post('/api/2fa/enable', wrap(async (req, res) => {
