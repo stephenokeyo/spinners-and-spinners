@@ -20,7 +20,7 @@ export const AdminsManager: React.FC = () => {
   const saveNumber = async (e: React.FormEvent) => {
     e.preventDefault();
     const r = await api('PUT', '/api/global-whatsapp', { whatsapp: numberDraft ?? globalWhatsapp });
-    setMsg({ ok: r.success, text: r.success ? 'WhatsApp number saved. Every product now routes to it.' : r.error || 'Could not save the number.' });
+    setMsg({ ok: r.success, text: r.success ? "WhatsApp number saved. The house store's products now route to it." : r.error || 'Could not save the number.' });
     if (r.success) { setNumberDraft(null); void refreshSite(); }
   };
 
@@ -68,7 +68,7 @@ export const AdminsManager: React.FC = () => {
 
       <form onSubmit={saveNumber} className="flex flex-wrap items-end gap-3 text-xs border border-white/10 rounded p-3">
         <label className="flex-1 min-w-[220px] space-y-1">
-          <span className="text-neutral-400">Global WhatsApp number – all products (partners' and admins') send customers here</span>
+          <span className="text-neutral-400">Global WhatsApp number – used for the house store's products (and as a fallback). Partner products go to the partner's own number</span>
           <input value={numberDraft ?? globalWhatsapp} onChange={e => setNumberDraft(e.target.value)} placeholder="+254712345678" className="w-full bg-white/5 border border-white/10 rounded px-2 py-2 text-white" />
         </label>
         <button type="submit" className="px-3 py-2 bg-amber-500 hover:bg-amber-400 text-black font-semibold uppercase tracking-wider rounded">Save number</button>

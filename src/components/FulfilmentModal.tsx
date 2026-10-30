@@ -26,7 +26,9 @@ export const FulfilmentModal: React.FC = () => {
       setError('Enter your name, phone number and delivery location.');
       return;
     }
-    const url = buildWhatsAppUrl({ ...partner, whatsapp: globalWhatsapp || partner.whatsapp }, whatsappProduct, choice, deliveryLocation.trim(), { name: clientName.trim(), phone: clientPhone.trim() });
+    const isHouse = partner.id === 'spinners-and-spinners';
+    const number = isHouse ? (globalWhatsapp || partner.whatsapp) : (partner.whatsapp || globalWhatsapp);
+    const url = buildWhatsAppUrl({ ...partner, whatsapp: number }, whatsappProduct, choice, deliveryLocation.trim(), { name: clientName.trim(), phone: clientPhone.trim() });
     if (url) window.open(url, '_blank', 'noopener,noreferrer');
     close();
   };
