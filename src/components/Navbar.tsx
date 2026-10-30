@@ -31,9 +31,7 @@ export const Navbar: React.FC = () => {
           onClick={() => navigateTo('catalog')}
           className="text-left group cursor-pointer min-w-0"
         >
-          <span className="font-editorial text-xl sm:text-2xl tracking-[0.12em] sm:tracking-[0.2em] font-medium text-white group-hover:text-[#c5a059] transition-colors whitespace-nowrap shrink-0 block">
-           texStyle
-          </span>
+          <img src="/brand/logo-white.png" alt="texStyle" className="h-9 sm:h-11 w-auto block" />
           <span className="text-[10px] uppercase tracking-[0.3em] text-[#a1a1aa] block -mt-1 font-sans">
             Haute Couture Guild & Direct Brand Webpages
           </span>

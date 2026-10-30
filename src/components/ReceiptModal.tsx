@@ -98,6 +98,7 @@ export const ReceiptModal: React.FC<Props> = ({ order, partnerId, onClose }) => 
               {partner.kraPin && <p className="text-xs">KRA PIN: {partner.kraPin}</p>}
             </div>
             <div className="text-right">
+              <img src="/brand/logo-black.png" alt="texStyle" className="h-8 w-auto ml-auto mb-1" />
               <h2 className="text-lg font-bold uppercase">Delivery Receipt</h2>
               <p className="text-xs">No: {receiptNo}</p>
               <p className="text-xs">Date: {new Date().toLocaleDateString()}</p>

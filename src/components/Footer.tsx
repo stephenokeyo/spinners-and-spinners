@@ -11,9 +11,7 @@ export const Footer: React.FC = () => {
     <footer className="bg-[#08090a] border-t border-white/10 text-neutral-400 text-xs py-14 px-6">
       <div className="w-full grid grid-cols-1 md:grid-cols-12 gap-10 pb-12 border-b border-white/5">
         <div className="md:col-span-5 space-y-4">
-          <span className="font-editorial text-2xl tracking-[0.2em] font-medium text-white block">
-           texStyle
-          </span>
+          <img src="/brand/logo-white.png" alt="texStyle" className="h-14 w-auto block" />
           <p className="text-neutral-400 font-light leading-relaxed max-w-sm">
             A digital guild connecting private clients directly to historic and avant-garde couture spinners. Each partner operates a dedicated webpage, an isolated technical vault, and strictly guarded transactional communications.
           </p>
