@@ -36,7 +36,7 @@ export const AdminDashboard: React.FC = () => {
   } = useApp();
   const [bannerMsg, setBannerMsg] = useState('');
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'partners' | 'communications' | 'files' | 'orders' | 'admins' | 'showcase'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'partners' | 'communications' | 'files' | 'orders' | 'admins' | 'showcase' | 'products'>('overview');
   const [managedPartnerId, setManagedPartnerId] = useState<string | null>(null);
   const emptyForm = {
     name: '', location: '', tagline: '', ethos: '', specialty: '', story: '', bannerText: '',
@@ -205,6 +205,16 @@ export const AdminDashboard: React.FC = () => {
           >
             <Video className="w-4 h-4 text-amber-400" />
             <span>Showcase Videos</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('products')}
+            className={`pb-2 border-b-2 flex items-center gap-1.5 whitespace-nowrap ${
+              activeTab === 'products' ? 'border-amber-400 text-white font-semibold' : 'border-transparent text-neutral-400 hover:text-white'
+            }`}
+          >
+            <ShieldCheck className="w-4 h-4 text-amber-400" />
+            <span>Add Products</span>
           </button>
         </div>
       </section>
@@ -618,6 +628,32 @@ export const AdminDashboard: React.FC = () => {
           </div>
         )}
         {activeTab === 'showcase' && <ShowcaseManager />}
+
+        {activeTab === 'products' && (
+          <div>
+            <p className="text-xs text-neutral-400 mb-4">As a global admin you can add, update stock and remove products for any partner. Choose a partner below.</p>
+            {partners.length === 0 ? (
+              <p className="text-xs text-neutral-500">Add a partner first (Partners tab), then you can upload products to it.</p>
+            ) : (
+              <>
+                <div className="flex items-center gap-2 overflow-x-auto border-b border-white/10 pb-2 mb-6">
+                  {partners.map(p => (
+                    <button
+                      key={p.id}
+                      onClick={() => setManagedPartnerId(p.id)}
+                      className={`px-3.5 py-1.5 text-xs font-medium rounded whitespace-nowrap transition-all ${
+                        activeManagedId === p.id ? 'bg-[#c5a059] text-black font-semibold' : 'text-neutral-300 hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      {p.name}
+                    </button>
+                  ))}
+                </div>
+                {activeManagedId && <ProductManager key={activeManagedId} partnerId={activeManagedId} />}
+              </>
+            )}
+          </div>
+        )}
         {activeTab === 'admins' && (
           <div>
             <AdminsManager />
