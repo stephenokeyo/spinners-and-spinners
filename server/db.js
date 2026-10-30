@@ -68,6 +68,15 @@ CREATE TABLE IF NOT EXISTS showcase_videos (
   description TEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+CREATE TABLE IF NOT EXISTS reviews (
+  id TEXT PRIMARY KEY,
+  author TEXT NOT NULL,
+  rating INTEGER NOT NULL,
+  body TEXT NOT NULL,
+  product_title TEXT,
+  partner_name TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
 CREATE TABLE IF NOT EXISTS settings (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL

@@ -2,9 +2,10 @@ import React from 'react';
 import { useApp } from '../context/AppContext';
 import { ShieldCheck, Lock, Sparkles } from 'lucide-react';
 import { SocialIcon } from './SocialIcon';
+import { openContactSection } from './ContactPage';
 
 export const Footer: React.FC = () => {
-  const { partners, navigateTo, socialLinks } = useApp();
+  const { partners, navigateTo, socialLinks, contact } = useApp();
 
   return (
     <footer className="bg-[#08090a] border-t border-white/10 text-neutral-400 text-xs py-14 px-6">
@@ -73,7 +74,20 @@ export const Footer: React.FC = () => {
         </div>
 
         <div className="md:col-span-4 space-y-3">
-          <h4 className="text-xs uppercase tracking-wider text-white font-semibold">
+          <h4 className="text-xs uppercase tracking-wider text-white font-semibold">Contact us</h4>
+          <ul className="space-y-1.5 text-[11px]">
+            {contact.website && <li><a href={contact.website} target="_blank" rel="noopener noreferrer" className="hover:text-white break-all">{contact.website.replace(/^https?:\/\//, '')}</a></li>}
+            {contact.emails.map(m => <li key={m}><a href={`mailto:${m}`} className="hover:text-white break-all">{m}</a></li>)}
+            {contact.location && <li>{contact.location}</li>}
+            {contact.salesPhones.map(p => <li key={p.phone}>{p.name || 'Sales'}: <a href={`tel:${p.phone.replace(/[^\d+]/g, '')}`} className="hover:text-white font-mono">{p.phone}</a></li>)}
+          </ul>
+          <div className="flex flex-wrap gap-2 pt-1">
+            <button onClick={() => openContactSection(navigateTo as (v: 'contact') => void, 'details')} className="px-3 py-1.5 rounded border border-white/10 hover:text-white hover:bg-white/5">Contact us</button>
+            <button onClick={() => openContactSection(navigateTo as (v: 'contact') => void, 'reviews')} className="px-3 py-1.5 rounded border border-white/10 hover:text-white hover:bg-white/5">Client reviews</button>
+            <button onClick={() => openContactSection(navigateTo as (v: 'contact') => void, 'support')} className="px-3 py-1.5 rounded border border-[#c5a059]/40 text-[#c5a059] hover:bg-[#c5a059]/10">Partner support</button>
+          </div>
+
+          <h4 className="pt-4 text-xs uppercase tracking-wider text-white font-semibold">
             Security & Client Confidentiality
           </h4>
           <p className="text-neutral-400 font-light leading-relaxed text-[11px]">

@@ -15,6 +15,7 @@ import { CheckoutModal } from './components/CheckoutModal';
 import { LoginModal } from './components/LoginModal';
 import { FulfilmentModal } from './components/FulfilmentModal';
 import { Footer } from './components/Footer';
+import { ContactPage } from './components/ContactPage';
 
 const AppContent: React.FC = () => {
   const { currentView, currentUser, selectedPartnerId, partners } = useApp();
@@ -47,6 +48,7 @@ const AppContent: React.FC = () => {
             {currentView === 'partner' && (partners.some(p => p.id === selectedPartnerId) ? <PartnerWebpage /> : <BoutiquesView />)}
             {currentView === 'dashboard' && renderDashboard()}
             {currentView === 'orders' && <OrdersView />}
+            {currentView === 'contact' && <ContactPage />}
           </>
         )}
       </main>

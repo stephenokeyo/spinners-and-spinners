@@ -1,5 +1,6 @@
 import { AdminsManager } from './AdminsManager';
 import { ShowcaseManager } from './ShowcaseManager';
+import { ContactManager } from './ContactManager';
 import { SocialLinksManager } from './SocialLinksManager';
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
@@ -36,7 +37,7 @@ export const AdminDashboard: React.FC = () => {
   } = useApp();
   const [bannerMsg, setBannerMsg] = useState('');
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'partners' | 'communications' | 'files' | 'orders' | 'admins' | 'showcase' | 'products'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'partners' | 'communications' | 'files' | 'orders' | 'admins' | 'showcase' | 'products' | 'contact'>('overview');
   const [managedPartnerId, setManagedPartnerId] = useState<string | null>(null);
   const emptyForm = {
     name: '', location: '', tagline: '', ethos: '', specialty: '', story: '', bannerText: '',
@@ -215,6 +216,16 @@ export const AdminDashboard: React.FC = () => {
           >
             <ShieldCheck className="w-4 h-4 text-amber-400" />
             <span>Add Products</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('contact')}
+            className={`pb-2 border-b-2 flex items-center gap-1.5 whitespace-nowrap ${
+              activeTab === 'contact' ? 'border-amber-400 text-white font-semibold' : 'border-transparent text-neutral-400 hover:text-white'
+            }`}
+          >
+            <ShieldCheck className="w-4 h-4 text-amber-400" />
+            <span>Contact &amp; Reviews</span>
           </button>
         </div>
       </section>
@@ -628,6 +639,8 @@ export const AdminDashboard: React.FC = () => {
           </div>
         )}
         {activeTab === 'showcase' && <ShowcaseManager />}
+
+        {activeTab === 'contact' && <ContactManager />}
 
         {activeTab === 'products' && (
           <div>

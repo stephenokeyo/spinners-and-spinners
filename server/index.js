@@ -243,16 +243,25 @@ app.use('/api', auth);
 
 // ---------- bootstrap ----------
 app.get('/api/bootstrap', wrap(async (req, res) => {
-  const [admins, partners, products, hero, social, showcase, gwa] = await Promise.all([
+  const [admins, partners, products, hero, social, showcase, gwa, contact, reviews] = await Promise.all([
     pool.query(`SELECT 1 FROM users WHERE role = 'admin' LIMIT 1`),
     pool.query(`SELECT data FROM partners ORDER BY created_at`),
     pool.query(`SELECT data FROM products ORDER BY created_at DESC`),
     pool.query(`SELECT value FROM settings WHERE key = 'hero_image'`),
     pool.query(`SELECT id, partner_id, platform, label, url, icon FROM social_links     ORDER BY created_at`),
         pool.query(`SELECT id, video_id, title, description FROM showcase_videos ORDER BY created_at DESC`),
-        pool.query(`SELECT value FROM settings WHERE key = 'global_whatsapp'`)
+        pool.query(`SELECT value FROM settings WHERE key = 'global_whatsapp'`),
+        pool.query(`SELECT value FROM settings WHERE key = 'contact_info'`),
+        pool.query(`SELECT id, author, rating, body, product_title, partner_name, created_at FROM reviews ORDER BY created_at DESC LIMIT 200`)
       ]);
+      let contactInfo = null;
+      try { contactInfo = contact.rows[0] ? JSON.parse(contact.rows[0].value) : null; } catch { /* ignore bad data */ }
       res.json({
+        contact: contactInfo,
+        reviews: reviews.rows.map(r => ({
+          id: r.id, author: r.author, rating: r.rating, text: r.body,
+          productTitle: r.product_title || '', partnerName: r.partner_name || '', createdAt: r.created_at
+        })),
         globalWhatsapp: gwa.rows[0]?.value || '',
         showcaseVideos: showcase.rows.map(r => ({ id: r.id, videoId: r.video_id, title: r.title, description: r.description })),
     socialLinks: social.rows.map(r => ({ id: r.id, partnerId: r.partner_id || null, platform: r.platform, label: r.label, url: r.url, icon: r.icon || undefined })),
@@ -678,6 +687,64 @@ app.delete('/api/showcase/:id', wrap(async (req, res) => {
   if (!rows[0]) return fail(res, 404, 'Not found.');
   await pool.query(`DELETE FROM showcase_videos WHERE id = $1`, [req.params.id]);
   await pool.query(`DELETE FROM videos WHERE id = $1`, [rows[0].video_id]);
+  res.json({ success: true });
+}));
+
+// ---------- contact details & client reviews ----------
+const cleanList = (v, max, each) => (Array.isArray(v) ? v : []).slice(0, max).map(each).filter(Boolean);
+
+app.put('/api/contact', needAdmin, wrap(async (req, res) => {
+  const b = req.body || {};
+  const contact = {
+    website: str(b.website, 200),
+    location: str(b.location, 300),
+    emails: cleanList(b.emails, 10, e => {
+      const v = str(e, 200).toLowerCase();
+      return isValidEmail(v) ? v : '';
+    }),
+    salesPhones: cleanList(b.salesPhones, 20, p => {
+      const phone = str(p?.phone, 30);
+      return isValidWhatsApp(phone) ? { name: str(p?.name, 80), phone } : null;
+    }),
+    supportPhone: isValidWhatsApp(str(b.supportPhone, 30)) ? str(b.supportPhone, 30) : '',
+    supportEmail: isValidEmail(str(b.supportEmail, 200).toLowerCase()) ? str(b.supportEmail, 200).toLowerCase() : '',
+    supportNote: str(b.supportNote, 500)
+  };
+  if (contact.website && !/^https?:\/\//i.test(contact.website)) contact.website = `https://${contact.website}`;
+  await pool.query(
+    `INSERT INTO settings (key, value) VALUES ('contact_info', $1) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value`,
+    [JSON.stringify(contact)]
+  );
+  res.json({ success: true, contact });
+}));
+
+app.post('/api/reviews', wrap(async (req, res) => {
+  const key = `review|${req.ip}`;
+  if (rateLimited(key, 5)) return fail(res, 429, 'Too many reviews. Please try again later.');
+  const b = req.body || {};
+  const author = str(b.author, 80);
+  const text = str(b.text, 1000);
+  const rating = Number(b.rating);
+  if (!author) return fail(res, 400, 'Please enter your name.');
+  if (!text) return fail(res, 400, 'Please write your review.');
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) return fail(res, 400, 'Choose a rating from 1 to 5.');
+  let productTitle = '';
+  let partnerName = '';
+  if (b.productId) {
+    const p = await pool.query(`SELECT data->>'title' AS title, data->>'partnerName' AS pn FROM products WHERE id = $1`, [String(b.productId)]);
+    if (p.rows[0]) { productTitle = p.rows[0].title || ''; partnerName = p.rows[0].pn || ''; }
+  }
+  noteAttempt(key);
+  const id = `rev-${crypto.randomUUID()}`;
+  await pool.query(
+    `INSERT INTO reviews (id, author, rating, body, product_title, partner_name) VALUES ($1,$2,$3,$4,$5,$6)`,
+    [id, author, rating, text, productTitle, partnerName]
+  );
+  res.json({ success: true, review: { id, author, rating, text, productTitle, partnerName, createdAt: new Date().toISOString() } });
+}));
+
+app.delete('/api/reviews/:id', needAdmin, wrap(async (req, res) => {
+  await pool.query(`DELETE FROM reviews WHERE id = $1`, [req.params.id]);
   res.json({ success: true });
 }));
 

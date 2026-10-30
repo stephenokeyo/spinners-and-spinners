@@ -4,6 +4,7 @@ import { useApp } from '../context/AppContext';
 import { Partner, PartnerFile, ChatThread, Order } from '../types';
 import { ProductManager } from './ProductManager';
 import { VideoButton } from './VideoButton';
+import { openContactSection } from './ContactPage';
 import { formatPrice } from '../utils/helpers';
 import {
   FolderLock,
@@ -243,6 +244,13 @@ export const PartnerDashboard: React.FC = () => {
             <ShoppingBag className="w-4 h-4 text-emerald-400" />
             <span>Spinners&Spinners Commissions</span>
             <span className="font-mono text-[11px] text-emerald-400">({partnerOrders.length})</span>
+          </button>
+
+          <button
+            onClick={() => openContactSection(navigateTo as (v: 'contact') => void, 'support')}
+            className="pb-2 border-b-2 border-transparent flex items-center gap-1.5 whitespace-nowrap text-[#c5a059] hover:text-white"
+          >
+            <span>Support</span>
           </button>
         </div>
       </section>

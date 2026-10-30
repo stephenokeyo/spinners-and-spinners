@@ -5,6 +5,26 @@ import { api, getToken, setToken } from '../utils/api';
 import { isValidEmail, MIN_PASSWORD_LENGTH } from '../utils/auth';
 import { isValidWhatsApp, isValidKraPin } from '../utils/helpers';
 
+export interface ContactInfo {
+  website: string;
+  location: string;
+  emails: string[];
+  salesPhones: { name: string; phone: string }[];
+  supportPhone: string;
+  supportEmail: string;
+  supportNote: string;
+}
+export interface Review {
+  id: string;
+  author: string;
+  rating: number;
+  text: string;
+  productTitle: string;
+  partnerName: string;
+  createdAt: string;
+}
+const EMPTY_CONTACT: ContactInfo = { website: '', location: '', emails: [], salesPhones: [], supportPhone: '', supportEmail: '', supportNote: '' };
+
 export interface NewPartnerInput {
   name: string;
   location: string;
@@ -56,6 +76,10 @@ export interface ShowcaseVideo {
 interface AppContextType {
   showcaseVideos: ShowcaseVideo[];
   globalWhatsapp: string;
+  contact: ContactInfo;
+  reviews: Review[];
+  setContact: (c: ContactInfo) => void;
+  setReviews: React.Dispatch<React.SetStateAction<Review[]>>;
   refreshSite: () => Promise<void>;
   addShowcaseVideo: (input: { file: File; title: string; description: string }) => Promise<AuthResult>;
   deleteShowcaseVideo: (id: string) => Promise<void>;
@@ -88,10 +112,10 @@ interface AppContextType {
   deleteSocialLink: (id: string) => Promise<void>;
   setSiteHeroImage: (image: string) => Promise<AuthResult>;
   // Navigation & View State
-  currentView: 'catalog' | 'partner' | 'product' | 'dashboard' | 'orders' | 'security';
+  currentView: 'catalog' | 'partner' | 'product' | 'dashboard' | 'orders' | 'security' | 'contact';
   selectedPartnerId: string | null;
   selectedProductId: string | null;
-  navigateTo: (view: 'catalog' | 'partner' | 'product' | 'dashboard' | 'orders' | 'security', partnerId?: string, productId?: string) => void;
+  navigateTo: (view: 'catalog' | 'partner' | 'product' | 'dashboard' | 'orders' | 'security' | 'contact', partnerId?: string, productId?: string) => void;
   
   // RBAC Access Control checks
   canAccessPartnerFiles: (partnerId: string) => boolean;
@@ -170,6 +194,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
   const [showcaseVideos, setShowcaseVideos] = useState<ShowcaseVideo[]>([]);
   const [globalWhatsapp, setGlobalWhatsapp] = useState('');
+  const [contact, setContact] = useState<ContactInfo>(EMPTY_CONTACT);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [files, setFiles] = useState<PartnerFile[]>(() => readStored<PartnerFile[]>('files', []));
   const [orders, setOrders] = useState<Order[]>(() => readStored<Order[]>('orders', []));
   const [chatThreads, setChatThreads] = useState<ChatThread[]>(() => readStored<ChatThread[]>('chats', []));
@@ -177,7 +203,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const currentUser: User = me || guestUser;
 
   // Navigation State
-  const [currentView, setCurrentView] = useState<'catalog' | 'partner' | 'product' | 'dashboard' | 'orders' | 'security'>('catalog');
+  const [currentView, setCurrentView] = useState<'catalog' | 'partner' | 'product' | 'dashboard' | 'orders' | 'security' | 'contact'>('catalog');
   const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(null);
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
 
@@ -211,7 +237,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setSiteHeroImageState(r.heroImage || HERO_IMAGE);
       setSocialLinks(r.socialLinks || []);
       setShowcaseVideos(r.showcaseVideos || []);
-      setGlobalWhatsapp(r.globalWhatsapp || '');(r.me);
+      setGlobalWhatsapp(r.globalWhatsapp || '');
+      setContact({ ...EMPTY_CONTACT, ...(r.contact || {}) });
+      setReviews(r.reviews || []);(r.me);
       if (!r.me && getToken()) setToken(null);
     }
     setIsLoading(false);
@@ -306,7 +334,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (selectedPartnerId === partnerId) setSelectedPartnerId(null);
     await refresh();
   };
-  const navigateTo = (view: 'catalog' | 'partner' | 'product' | 'dashboard' | 'orders' | 'security', partnerId?: string, productId?: string) => {
+  const navigateTo = (view: 'catalog' | 'partner' | 'product' | 'dashboard' | 'orders' | 'security' | 'contact', partnerId?: string, productId?: string) => {
     setCurrentView(view);
     if (partnerId !== undefined) setSelectedPartnerId(partnerId);
     if (productId !== undefined) setSelectedProductId(productId);
@@ -674,6 +702,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         showcaseVideos,
         globalWhatsapp,
         refreshSite: refresh,
+        contact,
+        reviews,
+        setContact,
+        setReviews,
         addShowcaseVideo,
         deleteShowcaseVideo,
         socialLinks,

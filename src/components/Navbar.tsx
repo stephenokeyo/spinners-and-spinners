@@ -95,6 +95,16 @@ export const Navbar: React.FC = () => {
             )}
           </button>
 
+          {/* Contact */}
+          <button
+            onClick={() => navigateTo('contact')}
+            className={`hover:text-white transition-colors whitespace-nowrap shrink-0 pb-0.5 border-b-2 ${
+              currentView === 'contact' ? 'border-[#c5a059] text-white' : 'border-transparent text-neutral-400'
+            }`}
+          >
+            Contact Us
+          </button>
+
           {/* Admin link if Admin */}
           {currentUser.role === 'admin' && (
             <button
