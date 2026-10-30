@@ -3,11 +3,22 @@ import { useApp } from '../context/AppContext';
 import { Product, Partner } from '../types';
 import { VideoButton } from './VideoButton';
 import { ProductViewer } from './ProductViewer';
-import { formatPrice } from '../utils/helpers';
+import { formatPrice, fileToCompressedDataUrl } from '../utils/helpers';
 import { Sparkles, MessageSquare, ArrowRight, ShieldCheck, SlidersHorizontal, Search, CheckCircle } from 'lucide-react';
 
 export const ProductCatalog: React.FC = () => {
-  const { products, partners, siteHeroImage, navigateTo, openChatForPartner, setCheckoutProduct, setIsCheckoutModalOpen, setWhatsappProduct } = useApp();
+  const { products, partners, siteHeroImage, setSiteHeroImage, currentUser, navigateTo, openChatForPartner, setCheckoutProduct, setIsCheckoutModalOpen, setWhatsappProduct } = useApp();
+  const [heroMsg, setHeroMsg] = useState('');
+
+  const changeHero = async (file?: File) => {
+    if (!file) return;
+    try {
+      const r = await setSiteHeroImage(await fileToCompressedDataUrl(file, 1600));
+      setHeroMsg(r.success ? 'Banner updated.' : r.error || 'Could not update the banner.');
+    } catch (err) {
+      setHeroMsg((err as Error).message);
+    }
+  };
   
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [selectedPartnerFilter, setSelectedPartnerFilter] = useState<string>('All');
@@ -73,7 +84,15 @@ export const ProductCatalog: React.FC = () => {
                 className="w-full h-full object-cover object-center group-hover:scale-102 transition-transform duration-700"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent pointer-events-none" />
-              
+              {currentUser.role === 'admin' && (
+                <div className="absolute top-3 right-3 z-10 flex flex-col items-end gap-1">
+                  <label className="cursor-pointer px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-black bg-[#c5a059] hover:bg-[#d4b069] rounded shadow">
+                    Change banner photo
+                    <input type="file" accept="image/*" className="hidden" onChange={e => { const f = e.target.files?.[0]; e.target.value = ''; changeHero(f); }} />
+                  </label>
+                  {heroMsg && <span className="text-[11px] text-white bg-black/70 px-2 py-0.5 rounded">{heroMsg}</span>}
+                </div>
+              )}              
               <div className="absolute bottom-4 left-5 right-5 flex items-end justify-between">
                 <div>
                   <span className="text-[10px] uppercase tracking-widest text-[#c5a059]">texStyle Partner Houses</span>
