@@ -40,21 +40,22 @@ export const Navbar: React.FC = () => {
         {/* Zone 2: 4–5 clean single-line text navigation links */}
         <nav className="flex order-last md:order-none w-full md:w-auto overflow-x-auto md:overflow-visible items-center gap-5 md:gap-7 text-sm font-medium text-neutral-300">
           <button
-            onClick={() => navigateTo('partner', '')}
-            className={`hover:text-white transition-colors whitespace-nowrap shrink-0 pb-0.5 border-b-2 ${
-              currentView === 'partner' ? 'border-[#c5a059] text-white' : 'border-transparent text-neutral-400'
-            }`}
-          >
-            Partner Boutiques
-          </button>
-
-          <button
             onClick={() => navigateTo('catalog')}
             className={`hover:text-white transition-colors whitespace-nowrap shrink-0 pb-0.5 border-b-2 ${
               currentView === 'catalog' ? 'border-[#c5a059] text-white' : 'border-transparent text-neutral-400'
             }`}
           >
             All Products
+          </button>
+
+          {/* Partner Houses Quick Dropdown / Link */}
+          <button
+            onClick={() => navigateTo('partner', '')}
+            className={`hover:text-white transition-colors whitespace-nowrap shrink-0 pb-0.5 border-b-2 ${
+              currentView === 'partner' ? 'border-[#c5a059] text-white' : 'border-transparent text-neutral-400'
+            }`}
+          >
+            Partner Boutiques
           </button>
 
           {/* Partner File Vault link: partners and admin only */}
