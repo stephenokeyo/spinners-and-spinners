@@ -812,6 +812,40 @@ app.delete('/api/products/:id', wrap(async (req, res) => {
   res.json({ success: true });
 }));
 
+app.patch('/api/products/:id', wrap(async (req, res) => {
+  const row = await loadManageable(req, res);
+  if (!row) return;
+  const b = req.body || {};
+  const patch = {};
+  if (b.title !== undefined) {
+    patch.title = str(b.title, 200);
+    if (!patch.title) return fail(res, 400, 'Item name is required.');
+  }
+  if (b.description !== undefined) {
+    patch.description = str(b.description, 4000);
+    if (!patch.description) return fail(res, 400, 'Description is required.');
+  }
+  if (b.price !== undefined) {
+    const price = Number(b.price);
+    if (!(price >= 0)) return fail(res, 400, 'Enter a valid price.');
+    patch.price = price;
+  }
+  if (b.stock !== undefined) {
+    const stock = Number(b.stock);
+    if (!Number.isInteger(stock) || stock < 0) return fail(res, 400, 'Quantity must be a whole number of 0 or more.');
+    patch.stock = stock;
+  }
+  if (b.category !== undefined) {
+    const typed = str(b.category, 80).replace(/\s+/g, ' ');
+    if (typed) {
+      const ex = await pool.query(`SELECT data->>'category' AS c FROM products WHERE lower(data->>'category') = $1 LIMIT 1`, [typed.toLowerCase()]);
+      patch.category = ex.rows[0]?.c || typed;
+    }
+  }
+  const r = await mergeData(pool, 'products', req.params.id, patch);
+  res.json({ success: true, product: r.rows[0].data });
+}));
+
 app.patch('/api/products/:id/stock', wrap(async (req, res) => {
   const row = await loadManageable(req, res);
   if (!row) return;

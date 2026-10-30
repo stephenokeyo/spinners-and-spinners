@@ -106,6 +106,7 @@ interface AppContextType {
   deleteProduct: (productId: string) => Promise<void>;
   markProductSold: (productId: string, quantity?: number) => Promise<void>;
   setProductStock: (productId: string, stock: number) => Promise<void>;
+  updateProduct: (productId: string, fields: { title?: string; description?: string; price?: number; stock?: number; category?: string }) => Promise<AuthResult>;
   siteHeroImage: string;
   socialLinks: SocialLink[];
   addSocialLink: (input: { partnerId: string | null; platform: string; label: string; url: string; icon?: string }) => Promise<AuthResult>;
@@ -672,6 +673,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (r.success) setProducts(prev => prev.map(p => (p.id === productId ? r.product : p)));
   };
 
+  const updateProduct: AppContextType['updateProduct'] = async (productId, fields) => {
+    const r = await api('PATCH', `/api/products/${encodeURIComponent(productId)}`, fields);
+    if (r.success) setProducts(prev => prev.map(p => (p.id === productId ? r.product : p)));
+    return { success: r.success, error: r.error };
+  };
+
   const updateOrderStatus = (orderId: string, status: Order['status']) => {
     setOrders(prev =>
       prev.map(o => (o.id === orderId ? { ...o, status } : o))
@@ -697,6 +704,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         deleteProduct,
         markProductSold,
         setProductStock,
+        updateProduct,
         siteHeroImage,
         setSiteHeroImage,
         showcaseVideos,

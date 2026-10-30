@@ -21,6 +21,7 @@ export const ProductManager: React.FC<{ partnerId: string }> = ({ partnerId }) =
   const [image, setImage] = useState('');
   const [video, setVideo] = useState<File | null>(null);
   const [feedback, setFeedback] = useState<{ ok: boolean; msg: string } | null>(null);
+  const [editing, setEditing] = useState<Product | null>(null);
 
   const handleVideo = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -170,6 +171,14 @@ export const ProductManager: React.FC<{ partnerId: string }> = ({ partnerId }) =
                 </div>
                 <div className="flex gap-2 pt-1">
                   <button
+                    onClick={() => setEditing(p)}
+                    className="flex-1 py-1.5 text-[11px] rounded border border-[#c5a059]/50 text-[#c5a059] hover:bg-[#c5a059]/10"
+                  >
+                    Edit details &amp; price
+                  </button>
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <button
                     disabled={p.stock === 0}
                     onClick={() => markProductSold(p.id)}
                     className="flex-1 py-1.5 text-[11px] rounded border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/10 disabled:opacity-40 disabled:cursor-not-allowed"
@@ -197,6 +206,53 @@ export const ProductManager: React.FC<{ partnerId: string }> = ({ partnerId }) =
         </div>
       </div>
     </div>
+    {editing && <EditProductModal product={editing} onClose={() => setEditing(null)} />}
     </>
+  );
+};
+
+const EditProductModal: React.FC<{ product: Product; onClose: () => void }> = ({ product, onClose }) => {
+  const { updateProduct } = useApp();
+  const [title, setTitle] = useState(product.title);
+  const [description, setDescription] = useState(product.description);
+  const [price, setPrice] = useState(String(product.price ?? 0));
+  const [stock, setStock] = useState(String(product.stock ?? 0));
+  const [category, setCategory] = useState(product.category);
+  const [err, setErr] = useState('');
+  const [busy, setBusy] = useState(false);
+  const cls = 'w-full bg-neutral-900 border border-white/10 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-[#c5a059]';
+
+  const save = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setBusy(true);
+    const r = await updateProduct(product.id, { title, description, category, price: Number(price) || 0, stock: Number(stock) });
+    setBusy(false);
+    if (r.success) onClose();
+    else setErr(r.error || 'Could not save changes.');
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4" onClick={onClose}>
+      <form onSubmit={save} onClick={e => e.stopPropagation()} className="w-full max-w-md bg-neutral-950 border border-white/15 rounded p-5 space-y-3 max-h-[90vh] overflow-y-auto">
+        <h3 className="font-editorial text-lg text-white">Edit product</h3>
+        <label className="block text-[11px] text-neutral-400 space-y-1"><span>Item name</span>
+          <input required value={title} onChange={e => setTitle(e.target.value)} className={cls} /></label>
+        <label className="block text-[11px] text-neutral-400 space-y-1"><span>Description</span>
+          <textarea required rows={4} value={description} onChange={e => setDescription(e.target.value)} className={cls} /></label>
+        <div className="grid grid-cols-3 gap-3">
+          <label className="block text-[11px] text-neutral-400 space-y-1"><span>Price (KSh)</span>
+            <input type="number" min="0" value={price} onChange={e => setPrice(e.target.value)} className={cls} /></label>
+          <label className="block text-[11px] text-neutral-400 space-y-1"><span>Quantity</span>
+            <input type="number" min="0" step="1" required value={stock} onChange={e => setStock(e.target.value)} className={cls} /></label>
+          <label className="block text-[11px] text-neutral-400 space-y-1"><span>Category</span>
+            <input value={category} onChange={e => setCategory(e.target.value)} className={cls} /></label>
+        </div>
+        {err && <p className="text-xs text-red-300">{err}</p>}
+        <div className="flex gap-2 pt-1">
+          <button type="button" onClick={onClose} className="flex-1 py-2 text-xs rounded border border-white/15 text-neutral-300 hover:bg-white/5">Cancel</button>
+          <button disabled={busy} className="flex-1 py-2 text-xs font-semibold uppercase tracking-wider text-black bg-[#c5a059] hover:bg-[#d4b069] rounded disabled:opacity-50">Save changes</button>
+        </div>
+      </form>
+    </div>
   );
 };
