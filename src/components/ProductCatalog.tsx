@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { Product, Partner } from '../types';
 import { VideoButton } from './VideoButton';
+import { ProductViewer } from './ProductViewer';
 import { formatPrice } from '../utils/helpers';
 import { Sparkles, MessageSquare, ArrowRight, ShieldCheck, SlidersHorizontal, Search, CheckCircle } from 'lucide-react';
 
@@ -11,10 +12,9 @@ export const ProductCatalog: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [selectedPartnerFilter, setSelectedPartnerFilter] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [viewing, setViewing] = useState<Product | null>(null);
 
   const categories = ['All', ...new Set(products.filter(p => p.stock !== 0).map(p => p.category))];
-
-  const openWhatsApp = (product: Product) => setWhatsappProduct(product);
 
   const filteredProducts = products.filter(product => {
     const matchesCategory = selectedCategory === 'All' || product.category === selectedCategory;
@@ -201,17 +201,15 @@ export const ProductCatalog: React.FC = () => {
             Showing <strong className="text-white font-mono">{filteredProducts.length}</strong> masterworks across partner houses
           </span>
           <span className="text-neutral-500 italic">
-            Clicking any product opens that partner's WhatsApp directly
+            Tap any product to enlarge it and proceed to WhatsApp
           </span>
         </div>
       </section>
 
       {/* Main Products Grid */}
       <section className="w-full px-6 pb-20">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 sm:gap-4">
           {filteredProducts.map(product => {
-            const partner = partners.find(p => p.id === product.partnerId);
-
             return (
               <div
                 key={product.id}
@@ -219,8 +217,8 @@ export const ProductCatalog: React.FC = () => {
               >
                 {/* Product Image Area - clicking redirects to partner page */}
                 <div
-                  onClick={() => openWhatsApp(product)}
-                  className="relative aspect-[3/4] bg-neutral-900 overflow-hidden cursor-pointer"
+                  onClick={() => setViewing(product)}
+                  className="relative aspect-[3/4] bg-neutral-900 overflow-hidden cursor-zoom-in"
                 >
                   <img
                     src={product.image}
@@ -232,85 +230,31 @@ export const ProductCatalog: React.FC = () => {
 
                   {/* Partner House Tag Overlay */}
                   {product.videoId && (
-                    <div className="absolute top-3 right-3">
+                    <div className="absolute top-2 right-2">
                       <VideoButton videoId={product.videoId} title={product.title} className="bg-black/75" />
                     </div>
                   )}
-                  <div className="absolute top-3 left-3 bg-black/75 backdrop-blur-sm border border-white/10 px-2.5 py-1 text-[11px] text-[#c5a059] uppercase tracking-wider font-medium">
+                  <div className="absolute top-2 left-2 max-w-[75%] truncate bg-black/75 backdrop-blur-sm border border-white/10 px-2 py-0.5 text-[10px] text-[#c5a059] uppercase tracking-wider font-medium">
                     {product.partnerName}
-                  </div>
-
-                  {/* Category Pill replacement: quiet clean text */}
-                  <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs text-white">
-                    <span className="text-white/80 font-light">{product.category}</span>
-                    <span className="text-[11px] text-[#c5a059] opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 font-medium">
-                      Chat on WhatsApp <ArrowRight className="w-3 h-3" />
-                    </span>
                   </div>
                 </div>
 
-                {/* Content Area */}
-                <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
-                  <div>
-                    <div className="flex items-center justify-between gap-2 text-xs text-neutral-400 mb-1">
-                      <span>{partner?.location || 'Paris Spinner'}</span>
-                      {product.leadTime !== 'On request' && (
-                        <span className="font-mono text-[11px] text-neutral-400">Lead time: {product.leadTime.split(' ')[0]}</span>
-                      )}
-                    </div>
-
-                    <h3
-                      onClick={() => openWhatsApp(product)}
-                      className="font-editorial text-xl text-white font-medium hover:text-[#c5a059] transition-colors cursor-pointer line-clamp-1"
+                {/* Compact info */}
+                <div className="p-2.5 space-y-1.5">
+                  <h3
+                    onClick={() => setViewing(product)}
+                    className="font-editorial text-sm text-white font-medium hover:text-[#c5a059] transition-colors cursor-pointer line-clamp-1"
+                  >
+                    {product.title}
+                  </h3>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-mono text-white">{formatPrice(product)}</span>
+                    <button
+                      onClick={() => setViewing(product)}
+                      className="px-2 py-1 text-[10px] font-semibold tracking-wider uppercase text-black bg-[#c5a059] hover:bg-[#d4b069] rounded whitespace-nowrap"
                     >
-                      {product.title}
-                    </h3>
-
-                    <p className="text-xs text-neutral-300 line-clamp-2 mt-2 leading-relaxed font-light">
-                      {product.description}
-                    </p>
-
-                    {/* Materials list */}
-                    <div className="mt-3 flex flex-wrap gap-1 text-[11px] text-neutral-400">
-                      {product.materials.map((mat, i) => (
-                        <span key={i} className="after:content-['·'] after:ml-1 last:after:content-none text-neutral-400">
-                          {mat}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Price and Primary Actions */}
-                  <div className="pt-4 border-t border-white/10 flex items-center justify-between gap-3">
-                    <div>
-                      <span className="text-[10px] uppercase tracking-wider text-neutral-400 block">Spinner Spinners&Spinners</span>
-                      <span className="text-lg font-mono font-medium text-white tracking-tight">
-                        {formatPrice(product)}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      {/* Chat with this Partner */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openChatForPartner(product.partnerId, product.id);
-                        }}
-                        title={`Chat directly with ${product.partnerName} about this piece`}
-                        className="p-2 rounded bg-white/5 hover:bg-white/15 text-neutral-300 hover:text-white border border-white/10 transition-colors"
-                      >
-                        <MessageSquare className="w-4 h-4 text-[#c5a059]" />
-                      </button>
-
-                      {/* Opens WhatsApp of this product's partner only */}
-                      <button
-                        onClick={() => openWhatsApp(product)}
-                        className="px-3.5 py-2 text-xs font-semibold tracking-wider uppercase text-black bg-[#c5a059] hover:bg-[#d4b069] rounded transition-all whitespace-nowrap flex items-center gap-1.5"
-                      >
-                        <span>WhatsApp Partner</span>
-                        <ArrowRight className="w-3 h-3" />
-                      </button>
-                    </div>
+                      View
+                    </button>
                   </div>
                 </div>
               </div>
@@ -337,6 +281,7 @@ export const ProductCatalog: React.FC = () => {
           </div>
         )}
       </section>
+      {viewing && <ProductViewer product={viewing} onClose={() => setViewing(null)} />}
     </div>
   );
 };
