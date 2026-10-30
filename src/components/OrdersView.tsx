@@ -75,7 +75,7 @@ export const OrdersView: React.FC = () => {
                 <img
                   src={order.productImage}
                   alt={order.productTitle}
-                  className="w-24 h-24 rounded object-cover border border-white/10 shrink-0"
+                  className="w-24 h-24 rounded object-contain bg-neutral-900 border border-white/10 shrink-0"
                 />
 
                 <div className="space-y-1.5">

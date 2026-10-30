@@ -86,7 +86,7 @@ export const ProductManager: React.FC<{ partnerId: string }> = ({ partnerId }) =
         <label className="block cursor-pointer">
           <div className="aspect-[4/3] border border-dashed border-white/20 hover:border-[#c5a059] rounded flex items-center justify-center overflow-hidden bg-neutral-900">
             {image ? (
-              <img src={image} alt="Preview" className="w-full h-full object-cover" />
+              <img src={image} alt="Preview" className="w-full h-full object-contain" />
             ) : (
               <div className="text-center text-neutral-400 text-xs space-y-1">
                 <ImagePlus className="w-6 h-6 mx-auto text-[#c5a059]" />
@@ -147,7 +147,7 @@ export const ProductManager: React.FC<{ partnerId: string }> = ({ partnerId }) =
           {partnerProducts.map(p => (
             <div key={p.id} className="bg-neutral-950 border border-white/10 rounded overflow-hidden">
               <div className="relative">
-                <img src={p.image} alt={p.title} className="w-full aspect-[4/3] object-cover" />
+                <img src={p.image} alt={p.title} className="w-full aspect-[4/3] object-contain bg-neutral-900" />
                 {p.videoId && <div className="absolute top-2 right-2"><VideoButton videoId={p.videoId} title={p.title} className="bg-black/75" /></div>}
               </div>
               <div className="p-3 space-y-1">

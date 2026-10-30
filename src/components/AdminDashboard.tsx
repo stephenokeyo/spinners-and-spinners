@@ -600,7 +600,7 @@ export const AdminDashboard: React.FC = () => {
                   <img
                     src={order.productImage}
                     alt={order.productTitle}
-                    className="w-16 h-16 rounded object-cover border border-white/10"
+                    className="w-16 h-16 rounded object-contain bg-neutral-900 border border-white/10"
                   />
                   <div>
                     <div className="flex items-center gap-2">

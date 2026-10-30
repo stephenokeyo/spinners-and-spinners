@@ -260,7 +260,7 @@ export const PartnerDashboard: React.FC = () => {
                 {products.filter(p => p.stock !== 0).map(p => (
                   <div key={p.id} className="bg-neutral-950 border border-white/10 rounded overflow-hidden">
                     <div className="relative">
-                      <img src={p.image} alt={p.title} className="w-full aspect-[3/4] object-cover" />
+                      <img src={p.image} alt={p.title} className="w-full aspect-[3/4] object-contain bg-neutral-900" />
                       {p.videoId && <div className="absolute top-2 right-2"><VideoButton videoId={p.videoId} title={p.title} className="bg-black/75" /></div>}
                     </div>
                     <div className="p-3 space-y-0.5">
@@ -527,7 +527,7 @@ export const PartnerDashboard: React.FC = () => {
                     <img
                       src={order.productImage}
                       alt={order.productTitle}
-                      className="w-20 h-20 rounded object-cover border border-white/10 shrink-0"
+                      className="w-20 h-20 rounded object-contain bg-neutral-900 border border-white/10 shrink-0"
                     />
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">

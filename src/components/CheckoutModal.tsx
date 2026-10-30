@@ -118,7 +118,7 @@ export const CheckoutModal: React.FC = () => {
               <img
                 src={checkoutProduct.image}
                 alt={checkoutProduct.title}
-                className="w-16 h-16 rounded object-cover border border-white/10 shrink-0"
+                className="w-16 h-16 rounded object-contain bg-neutral-900 border border-white/10 shrink-0"
               />
               <div className="flex-1">
                 <span className="text-[10px] uppercase tracking-wider text-[#c5a059] font-medium">

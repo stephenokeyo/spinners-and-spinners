@@ -52,7 +52,7 @@ export const BoutiquesView: React.FC = () => {
             {visible.map(p => (
               <div key={p.id} className="bg-neutral-950 border border-white/10 rounded overflow-hidden flex flex-col">
                 <div className="relative">
-                  <img src={p.image} alt={p.title} className="w-full aspect-[3/4] object-cover" />
+                  <img src={p.image} alt={p.title} className="w-full aspect-[3/4] object-contain bg-neutral-900" />
                   {p.videoId && <div className="absolute top-2 right-2"><VideoButton videoId={p.videoId} title={p.title} className="bg-black/75" /></div>}
                 </div>
                 <div className="p-3 space-y-1 flex-1 flex flex-col">

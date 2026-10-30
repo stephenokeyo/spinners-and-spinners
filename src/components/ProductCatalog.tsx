@@ -226,7 +226,7 @@ export const ProductCatalog: React.FC = () => {
                     src={product.image}
                     alt={product.title}
                     referrerPolicy="no-referrer"
-                    className="w-full h-full object-cover object-center group-hover:scale-104 transition-transform duration-500"
+                    className="w-full h-full object-contain object-center bg-neutral-900"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-80 group-hover:opacity-60 transition-opacity" />
 

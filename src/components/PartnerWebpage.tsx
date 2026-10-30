@@ -214,7 +214,7 @@ export const PartnerWebpage: React.FC = () => {
                   src={activeProduct.image}
                   alt={activeProduct.title}
                   referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500"
+                  className="w-full h-full object-contain"
                 />
                 <div className="absolute top-4 left-4 bg-black/80 backdrop-blur-sm border border-white/10 px-3 py-1 text-xs text-[#c5a059] uppercase tracking-wider">
                   {partner.name} Spinner Original
@@ -507,7 +507,7 @@ export const PartnerWebpage: React.FC = () => {
                   src={p.image}
                   alt={p.title}
                   referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain bg-neutral-900"
                 />
                 {p.videoId && <div className="absolute top-2 right-2"><VideoButton videoId={p.videoId} title={p.title} className="bg-black/75" /></div>}
               </div>
