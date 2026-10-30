@@ -71,6 +71,11 @@ export const Footer: React.FC = () => {
                 })}
             </div>
           )}
+
+          <div className="pt-4 space-y-1.5">
+            <h4 className="text-xs uppercase tracking-wider text-white font-semibold">Designed By</h4>
+            <p className="text-[11px] text-[#c5a059] font-medium">SecureTech Sln &amp; Spinners</p>
+          </div>
         </div>
 
         <div className="md:col-span-4 space-y-3">
