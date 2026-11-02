@@ -248,7 +248,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   useEffect(() => {
     void refresh();
-    const timer = setInterval(() => { if (!document.hidden) void refresh(); }, 30000);
+    const timer = setInterval(() => { if (!document.hidden) void refresh(); }, 5 * 60 * 1000);
     return () => clearInterval(timer);
   }, [refresh]);
 

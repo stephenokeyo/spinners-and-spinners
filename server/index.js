@@ -242,35 +242,53 @@ app.use(express.json({ limit: '12mb' }));
 app.use('/api', auth);
 
 // ---------- bootstrap ----------
+const BOOTSTRAP_CACHE_MS = 60 * 1000;
+let bootstrapCache = null;
+let bootstrapCacheAt = 0;
+let bootstrapCachePromise = null;
+
 app.get('/api/bootstrap', wrap(async (req, res) => {
-  const [admins, partners, products, hero, social, showcase, gwa, contact, reviews] = await Promise.all([
-    pool.query(`SELECT 1 FROM users WHERE role = 'admin' LIMIT 1`),
-    pool.query(`SELECT data FROM partners ORDER BY created_at`),
-    pool.query(`SELECT data FROM products ORDER BY created_at DESC`),
-    pool.query(`SELECT value FROM settings WHERE key = 'hero_image'`),
-    pool.query(`SELECT id, partner_id, platform, label, url, icon FROM social_links     ORDER BY created_at`),
-        pool.query(`SELECT id, video_id, title, description FROM showcase_videos ORDER BY created_at DESC`),
-        pool.query(`SELECT value FROM settings WHERE key = 'global_whatsapp'`),
-        pool.query(`SELECT value FROM settings WHERE key = 'contact_info'`),
-        pool.query(`SELECT id, author, rating, body, product_title, partner_name, created_at FROM reviews ORDER BY created_at DESC LIMIT 200`)
-      ]);
-      let contactInfo = null;
-      try { contactInfo = contact.rows[0] ? JSON.parse(contact.rows[0].value) : null; } catch { /* ignore bad data */ }
-      res.json({
-        contact: contactInfo,
-        reviews: reviews.rows.map(r => ({
-          id: r.id, author: r.author, rating: r.rating, text: r.body,
-          productTitle: r.product_title || '', partnerName: r.partner_name || '', createdAt: r.created_at
-        })),
-        globalWhatsapp: gwa.rows[0]?.value || '',
-        showcaseVideos: showcase.rows.map(r => ({ id: r.id, videoId: r.video_id, title: r.title, description: r.description })),
-    socialLinks: social.rows.map(r => ({ id: r.id, partnerId: r.partner_id || null, platform: r.platform, label: r.label, url: r.url, icon: r.icon || undefined })),
-    hasAdmin: admins.rows.length > 0,
-    partners: partners.rows.map(r => r.data),
-    products: products.rows.map(r => r.data),
-    heroImage: hero.rows[0]?.value || null,
-    me: req.user ? publicUser(req.user) : null
-  });
+  if (!bootstrapCache || Date.now() - bootstrapCacheAt >= BOOTSTRAP_CACHE_MS) {
+    if (!bootstrapCachePromise) {
+      bootstrapCachePromise = (async () => {
+        const [admins, partners, products, hero, social, showcase, gwa, contact, reviews] = await Promise.all([
+          pool.query(`SELECT 1 FROM users WHERE role = 'admin' LIMIT 1`),
+          pool.query(`SELECT data FROM partners ORDER BY created_at`),
+          pool.query(`SELECT data FROM products ORDER BY created_at DESC`),
+          pool.query(`SELECT value FROM settings WHERE key = 'hero_image'`),
+          pool.query(`SELECT id, partner_id, platform, label, url, icon FROM social_links ORDER BY created_at`),
+          pool.query(`SELECT id, video_id, title, description FROM showcase_videos ORDER BY created_at DESC`),
+          pool.query(`SELECT value FROM settings WHERE key = 'global_whatsapp'`),
+          pool.query(`SELECT value FROM settings WHERE key = 'contact_info'`),
+          pool.query(`SELECT id, author, rating, body, product_title, partner_name, created_at FROM reviews ORDER BY created_at DESC LIMIT 200`)
+        ]);
+        let contactInfo = null;
+        try { contactInfo = contact.rows[0] ? JSON.parse(contact.rows[0].value) : null; } catch { /* ignore bad data */ }
+        return {
+          contact: contactInfo,
+          reviews: reviews.rows.map(r => ({
+            id: r.id, author: r.author, rating: r.rating, text: r.body,
+            productTitle: r.product_title || '', partnerName: r.partner_name || '', createdAt: r.created_at
+          })),
+          globalWhatsapp: gwa.rows[0]?.value || '',
+          showcaseVideos: showcase.rows.map(r => ({ id: r.id, videoId: r.video_id, title: r.title, description: r.description })),
+          socialLinks: social.rows.map(r => ({ id: r.id, partnerId: r.partner_id || null, platform: r.platform, label: r.label, url: r.url, icon: r.icon || undefined })),
+          hasAdmin: admins.rows.length > 0,
+          partners: partners.rows.map(r => r.data),
+          products: products.rows.map(r => r.data),
+          heroImage: hero.rows[0]?.value || null
+        };
+      })()
+        .then(data => {
+          bootstrapCache = data;
+          bootstrapCacheAt = Date.now();
+          return data;
+        })
+        .finally(() => { bootstrapCachePromise = null; });
+    }
+    bootstrapCache = await bootstrapCachePromise;
+  }
+  res.json({ ...bootstrapCache, me: req.user ? publicUser(req.user) : null });
 }));
 
 // ---------- auth ----------
