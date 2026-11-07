@@ -88,9 +88,7 @@ const newRecoveryCodes = () =>
   });
 
 const WINDOW_MS = 15 * 60 * 1000;
-const QUARANTINE_MS = 24 * 60 * 60 * 1000;
 const attempts = new Map();
-const quarantined = new Map(); // ip -> release time
 const recent = key => {
   const now = Date.now();
   const rec = (attempts.get(key) || []).filter(t => now - t < WINDOW_MS);
@@ -101,19 +99,7 @@ const recent = key => {
 const rateLimited = (key, max = 8) => recent(key).length >= max;
 const noteAttempt = key => attempts.set(key, [...recent(key), Date.now()]);
 
-// Repeated hostile behaviour from one IP gets it blocked from the whole site.
-const quarantine = (ip, reason) => {
-  if (quarantined.has(ip)) return;
-  quarantined.set(ip, Date.now() + QUARANTINE_MS);
-  console.warn(`[SECURITY] Quarantined ${ip} for 24h: ${reason}`);
-};
-const strike = (ip, reason, limit = 10) => {
-  noteAttempt(`strike|${ip}`);
-  if (recent(`strike|${ip}`).length >= limit) quarantine(ip, reason);
-};
 setInterval(() => {
-  const now = Date.now();
-  for (const [ip, until] of quarantined) if (until < now) quarantined.delete(ip);
   for (const key of attempts.keys()) recent(key);
 }, 10 * 60 * 1000).unref();
 
@@ -203,12 +189,9 @@ const startSession = async userId => {
 };
 
 app.use((req, res, next) => {
-  const until = quarantined.get(req.ip);
-  if (until && until > Date.now()) return res.status(403).type('text').send('Access blocked.');
   let decoded = req.path;
-  try { decoded = decodeURIComponent(req.path); } catch { /* malformed encoding is itself suspicious */ strike(req.ip, 'malformed URL', 3); }
+  try { decoded = decodeURIComponent(req.path); } catch { return res.status(400).type('text').send('Bad request.'); }
   if (PROBE.test(decoded)) {
-    strike(req.ip, `probing ${req.path}`, 3);
     return res.status(404).type('text').send('Not found.');
   }
   next();
@@ -234,7 +217,7 @@ app.use((req, res, next) => {
 app.use((req, res, next) => {
   const key = `req|${req.ip}`;
   noteAttempt(key);
-  if (rateLimited(key, 3000)) { strike(req.ip, 'request flood', 3); return fail(res, 429, 'Too many requests.'); }
+  if (rateLimited(key, 3000)) return fail(res, 429, 'Too many requests.');
   next();
 });
 
@@ -298,7 +281,6 @@ app.post('/api/setup-admin', wrap(async (req, res) => {
   if (!SETUP_TOKEN) return fail(res, 503, 'Setup is disabled: SETUP_TOKEN is not configured on the server.');
   if (!safeEqual(req.body.setupCode || '', SETUP_TOKEN)) {
     noteAttempt(setupKey);
-    strike(req.ip, 'bad admin setup code', 5);
     return fail(res, 403, 'Invalid setup code.');
   }
   const name = str(req.body.name, 100);
@@ -339,7 +321,6 @@ app.post('/api/login', wrap(async (req, res) => {
     noteAttempt(key);
     noteAttempt(acctKey);
     noteAttempt(ipKey);
-    strike(req.ip, `repeated failed logins (${email})`, 25);
     return fail(res, 401, 'Invalid email or password.');
   }
   if (u.role === 'partner' && mailer) {
@@ -360,7 +341,6 @@ app.post('/api/login', wrap(async (req, res) => {
       noteAttempt(key);
       noteAttempt(acctKey);
       noteAttempt(ipKey);
-      strike(req.ip, `bad email code (${email})`, 15);
       return res.status(401).json({ success: false, needsCode: true, channel: 'email', error: 'Invalid or expired code. Sign in again to get a new one.' });
     }
   }
@@ -384,7 +364,6 @@ app.post('/api/login', wrap(async (req, res) => {
       noteAttempt(key);
       noteAttempt(acctKey);
       noteAttempt(ipKey);
-      strike(req.ip, `bad two-factor code (${email})`, 15);
       return res.status(401).json({ success: false, needsCode: true, error: 'Invalid code.' });
     }
   }
@@ -402,7 +381,6 @@ app.post('/api/2fa/reset', wrap(async (req, res) => {
   const codeOk = !!SETUP_TOKEN && safeEqual(req.body.setupCode || '', SETUP_TOKEN);
   if (!u || !pwOk || !codeOk) {
     noteAttempt(ipKey);
-    strike(req.ip, 'bad two-factor reset attempt', 5);
     return fail(res, 401, 'Reset failed. Check your email, password and setup code.');
   }
   await pool.query(
